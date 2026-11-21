@@ -15,6 +15,7 @@ ROOT = Path(__file__).parent
 STATE_FILE = ROOT / "data" / "state.json"
 TEMPLATE_FILE = ROOT / "templates" / "index.html"
 INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
+WEEKLY_TASK_GOAL = 15
 STATIC_FILES = {
     "/static/style.css": (ROOT / "static" / "style.css", "text/css; charset=utf-8"),
     "/pictures/kissatodo.png": (ROOT / "pictures" / "kissatodo.png", "image/png"),
@@ -98,6 +99,7 @@ def new_state() -> dict:
         "xp": 0,
         "daily_surprise": None,
         "pet": None,
+        "weekly_goal": None,
     }
 
 
@@ -141,6 +143,27 @@ def grant_surprise_package(
     state["inventory"][item] += multiplier
     package_image = random.choice(PACKAGE_IMAGES)
     return item, multiplier, package_image
+
+
+def ensure_weekly_goal(state: dict) -> dict:
+    iso_year, iso_week, _ = date.today().isocalendar()
+    current_week = f"{iso_year}-W{iso_week:02d}"
+    weekly_goal = state.get("weekly_goal")
+    if (
+        not isinstance(weekly_goal, dict)
+        or weekly_goal.get("week") != current_week
+        or type(weekly_goal.get("completed")) is not int
+        or weekly_goal["completed"] < 0
+    ):
+        weekly_goal = {"week": current_week, "completed": 0}
+        state["weekly_goal"] = weekly_goal
+        save_state(state)
+    return weekly_goal
+
+
+def register_completed_task(state: dict) -> None:
+    weekly_goal = ensure_weekly_goal(state)
+    weekly_goal["completed"] += 1
 
 
 def ensure_daily_surprise(state: dict) -> dict:
@@ -361,6 +384,35 @@ def render_page(
         pet_name = pet["name"]
         pet_visual = render_pet_visual(pet, 96 * (1 + 0.03 * (state["xp"] // 30)))
         daily_surprise = ensure_daily_surprise(state)
+        weekly_goal = ensure_weekly_goal(state)
+        completed_this_week = weekly_goal["completed"]
+        weekly_progress = min(
+            completed_this_week / WEEKLY_TASK_GOAL * 100,
+            100,
+        )
+        if completed_this_week >= WEEKLY_TASK_GOAL:
+            weekly_message = "Tavoite saavutettu — hienoa! Voit jatkaa tai levätä, kuten sinulle sopii."
+        else:
+            weekly_message = "Yksi tehtävä kerrallaan riittää. Vapaapäivä ei nollaa edistymistä."
+        weekly_goal_html = f"""
+          <section class="weekly-goal-card" aria-labelledby="weekly-goal-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">ARMOLLINEN VIIKKOTAVOITE</p>
+                <h2 id="weekly-goal-title">Viikon tavoite</h2>
+              </div>
+            </div>
+            <p class="weekly-goal-description">Tee vähintään {WEEKLY_TASK_GOAL} tehtävää viikon aikana.</p>
+            <div class="progress-label">
+              <span>Valmiit tehtävät tällä viikolla</span>
+              <span>{completed_this_week} / {WEEKLY_TASK_GOAL}</span>
+            </div>
+            <div class="progress-track weekly-progress-track" role="progressbar" aria-label="Viikon tehtävätavoite" aria-valuenow="{min(completed_this_week, WEEKLY_TASK_GOAL)}" aria-valuemin="0" aria-valuemax="{WEEKLY_TASK_GOAL}">
+              <span style="width: {weekly_progress:.1f}%"></span>
+            </div>
+            <p class="weekly-goal-message">{weekly_message}</p>
+          </section>
+        """
         surprise_difficulty = DIFFICULTIES[daily_surprise["difficulty"]]
         if daily_surprise["claimed"]:
             surprise_action = '<p class="surprise-used">Päivän yllätys on jo käytetty. Uusi ehdotus tulee huomenna!</p>'
@@ -387,6 +439,7 @@ def render_page(
         pet_name = ""
         pet_visual = ""
         daily_surprise_html = ""
+        weekly_goal_html = ""
 
     tasks = "\n".join(render_task(task) for task in state["tasks"])
     if not tasks:
@@ -423,6 +476,7 @@ def render_page(
             render_surprise_package(reward_package) if has_pet else "",
         )
         .replace("{{DAILY_SURPRISE}}", daily_surprise_html)
+        .replace("{{WEEKLY_GOAL}}", weekly_goal_html)
         .replace("{{INVENTORY}}", inventory)
         .replace("{{PRESET_OPTIONS}}", preset_options)
         .replace("{{DIFFICULTY_OPTIONS}}", difficulty_options)
@@ -539,6 +593,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 reward_multiplier = 2 if task.get("double_reward") else 1
                 grant_reward(state, reward, reward_multiplier)
                 reward_package = grant_surprise_package(state, reward_multiplier)
+                register_completed_task(state)
                 state["tasks"].remove(task)
             elif action == "complete_subtask":
                 task_id = form.get("task_id", [""])[0]
@@ -560,6 +615,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 if all(part["completed"] for part in task["subtasks"]):
                     reward = DIFFICULTIES[task["difficulty"]]
                     grant_reward(state, reward, 2 if task.get("double_reward") else 1)
+                    register_completed_task(state)
                     state["tasks"].remove(task)
             else:
                 raise ValueError("Tuntematon toiminto.")

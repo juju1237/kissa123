@@ -131,6 +131,23 @@ h1 span { font-size: .75em; }
   transition: width .25s ease;
 }
 
+.weekly-goal-card {
+  margin-top: 16px;
+  padding: 20px 24px;
+  border: 1px solid #dcebd8;
+  border-radius: 20px;
+  background: linear-gradient(110deg, #f1f8ed, #fffefa 78%);
+  box-shadow: 0 8px 26px rgb(68 48 30 / 4%);
+}
+
+.weekly-goal-card .eyebrow { color: #527c4e; }
+.weekly-goal-card .section-heading { margin-bottom: 12px; }
+.weekly-goal-card h2 { font-size: 1.25rem; }
+.weekly-goal-description, .weekly-goal-message { margin-bottom: 9px; color: var(--muted); font-size: .82rem; }
+.weekly-goal-message { margin: 9px 0 0; }
+.weekly-progress-track { background: #e2ecdf; }
+.weekly-progress-track span { background: #70a66b; }
+
 .daily-surprise {
   display: flex;
   align-items: center;
@@ -406,6 +423,7 @@ footer p { margin-bottom: 8px; }
   .cat-card { align-items: flex-start; gap: 15px; padding: 18px; }
   .cat-avatar { max-width: 34vw; border-radius: 20px; }
   .cat-message { margin-bottom: 14px; }
+  .weekly-goal-card { padding: 18px; }
   .daily-surprise { gap: 12px; padding: 18px; }
   .surprise-image { flex-basis: 48px; width: 48px; height: 48px; }
   .inventory-card, .tasks-section { padding: 18px; }
