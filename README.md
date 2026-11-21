@@ -2,7 +2,7 @@
 
 Yhden sivun, riippuvuudeton Python-to-do-sovellus pisteiden keräyksellä.
 Projektin tarkoitus on harjoitella vibe koodausta agentin avulla.
-## 2. Käynnistys Linuxissa
+## 1. Käynnistys Linuxissa
 Tarvitset:
 - Linux terminaalin
 - Gitin
@@ -10,7 +10,6 @@ Tarvitset:
 
 
 
-Kopioi tulostuva **julkinen** avain GitHubissa kohtaan **Settings → SSH and GPG keys → New SSH key**. Älä koskaan jaa tiedostoa `~/.ssh/id_ed25519` — se on yksityinen avaimesi. Jos SSH-avain on jo lisätty GitHubiin, voit ohittaa tämän va
 ### 2. Kloonaa sovellus
 
 Suorita komennot kansiossa, johon haluat ladata projektin:
