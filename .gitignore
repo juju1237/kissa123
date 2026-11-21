@@ -1,0 +1,28 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Build and package output
+build/
+dist/
+*.egg-info/
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local application state
+/data/state.json
+/data/state.tmp
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+.idea/

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tassutehtävät — palkitseva to-do</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">PIENIÄ TEKOJA, ISOJA KEHRÄYKSIÄ</p>
+        <h1>Tassutehtävät <span aria-hidden="true">🐾</span></h1>
+        <p class="subtitle">Hoida yksi asia kerrallaan — kissakaverisi juhlii kanssasi.</p>
+      </div>
+    </header>
+
+    <section class="cat-card" aria-label="Virtuaalikissan tiedot">
+      <div class="cat-avatar" role="img" aria-label="Suloinen virtuaalikissa">🐱</div>
+      <div class="cat-details">
+        <p class="eyebrow">KISSASI</p>
+        <h2>Muru <span class="level-badge">Taso {{LEVEL}}</span></h2>
+        <p class="cat-message">Jokainen tehtävä tuo Murulle tassupisteitä!</p>
+        <div class="progress-label"><span>Seuraava taso</span><span>{{PROGRESS}} / 100 XP</span></div>
+        <div class="progress-track" role="progressbar" aria-label="Edistyminen seuraavalle tasolle" aria-valuenow="{{PROGRESS}}" aria-valuemin="0" aria-valuemax="100">
+          <span style="width: {{PROGRESS}}%"></span>
+        </div>
+        <p class="total-xp">Yhteensä {{XP}} tassupistettä</p>
+      </div>
+    </section>
+
+    <section class="inventory-card" aria-labelledby="inventory-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">KERÄÄ PALKINTOJA</p>
+          <h2 id="inventory-title">Murun reppu</h2>
+        </div>
+        <span class="bag-icon" aria-hidden="true">🎒</span>
+      </div>
+      <ul class="inventory-list">{{INVENTORY}}</ul>
+    </section>
+
+    <section class="tasks-section" aria-labelledby="tasks-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ASKEL KERRALLAAN</p>
+          <h2 id="tasks-title">Tehtävälista</h2>
+        </div>
+      </div>
+
+      <div class="add-task-grid">
+        <form method="post" class="add-form preset-form">
+          <input type="hidden" name="action" value="add_preset">
+          <label for="preset">Valitse valmis tehtävä</label>
+          <div class="form-row">
+            <select id="preset" name="preset" required>{{PRESET_OPTIONS}}</select>
+            <button class="button button-secondary" type="submit">Lisää</button>
+          </div>
+        </form>
+        <form method="post" class="add-form">
+          <input type="hidden" name="action" value="add_custom">
+          <label for="task-name">Lisää oma tehtävä</label>
+          <input id="task-name" name="name" type="text" maxlength="80" placeholder="Esim. Järjestä työpöytä" required>
+          <label for="difficulty">Vaikeustaso</label>
+          <div class="form-row">
+            <select id="difficulty" name="difficulty" required>{{DIFFICULTY_OPTIONS}}</select>
+            <button class="button button-primary" type="submit">Lisää tehtävä</button>
+          </div>
+        </form>
+      </div>
+      {{ERROR}}
+
+      <ul class="task-list">{{TASKS}}</ul>
+    </section>
+
+    <footer>Sinun tahtisi riittää. Lepopäiväkin kuuluu hyvään viikkoon. 🌿</footer>
+  </main>
+</body>
+</html>
