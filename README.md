@@ -1,4 +1,4 @@
-# Tassutehtävät
+# alota jo
 
 Yhden sivun, riippuvuudeton Python-to-do-sovellus virtuaalikissalla.
 

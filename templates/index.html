@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tassutehtävät — palkitseva to-do</title>
+  <title>alota jo — palkitseva to-do</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -12,9 +12,13 @@
     <div class="app-dashboard" {{DASHBOARD_HIDDEN}}>
     <header class="page-header">
       <div>
-        <p class="eyebrow">PIENIÄ TEKOJA, ISOJA KEHRÄYKSIÄ</p>
-        <h1>Tassutehtävät <span aria-hidden="true">🐾</span></h1>
-        <p class="subtitle">Hoida yksi asia kerrallaan — kissakaverisi juhlii kanssasi.</p>
+        <p class="eyebrow">
+          it's dedication, not motivation
+          <img class="emoji-sized-image" src="/pictures/lemon.png" alt="" aria-hidden="true">
+          <img class="emoji-sized-image" src="/pictures/lemon.png" alt="" aria-hidden="true">
+        </p>
+        <h1>alota jo <span aria-hidden="true">🐾</span></h1>
+        <p class="subtitle">kasvata lemmikkiä :))</p>
       </div>
     </header>
 
@@ -85,8 +89,13 @@
     </section>
 
     <footer>
-      <p>Sinun tahtisi riittää. Lepopäiväkin kuuluu hyvään viikkoon. 🌿</p>
-      <p class="reset-warning">Nollaus poistaa tehtävät, palkinnot ja tassupisteet.</p>
+      <p>
+        lepää rauhassa
+        <img class="emoji-sized-image" src="/pictures/kapy.png" alt="" aria-hidden="true">
+        <img class="emoji-sized-image" src="/pictures/fih.png" alt="" aria-hidden="true">
+        <img class="emoji-sized-image" src="/pictures/lemon.png" alt="" aria-hidden="true">
+      </p>
+      <p class="reset-warning">nollaus nollaa pisteet</p>
       <form method="post" class="reset-form" onsubmit="return confirm('Haluatko varmasti aloittaa alusta? Kaikki tehtävät, palkinnot ja tassupisteet nollataan. Tätä ei voi perua.');">
         <input type="hidden" name="action" value="reset">
         <button class="button button-reset" type="submit">Aloita alusta</button>
