@@ -16,6 +16,8 @@
       </div>
     </header>
 
+    {{REWARD_PACKAGE}}
+
     <section class="cat-card" aria-label="Virtuaalikissan tiedot">
       <div class="cat-avatar">
         <img class="cat-image" src="/pictures/kissatodo.png" alt="Muru-kissa" style="width: {{CAT_SIZE}}px">
@@ -91,5 +93,27 @@
       </form>
     </footer>
   </main>
+  <script>
+    document.querySelectorAll(".reward-package details").forEach((details) => {
+      let openTimer;
+      let fadeTimer;
+      const card = details.closest(".reward-package");
+
+      details.addEventListener("toggle", () => {
+        window.clearTimeout(openTimer);
+        window.clearTimeout(fadeTimer);
+        if (!details.open) {
+          card.classList.remove("is-fading");
+          return;
+        }
+
+        openTimer = window.setTimeout(() => {
+          if (!details.open) return;
+          card.classList.add("is-fading");
+          fadeTimer = window.setTimeout(() => card.remove(), 500);
+        }, 3000);
+      });
+    });
+  </script>
 </body>
 </html>

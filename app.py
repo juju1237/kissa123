@@ -18,6 +18,11 @@ INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
 STATIC_FILES = {
     "/static/style.css": (ROOT / "static" / "style.css", "text/css; charset=utf-8"),
     "/pictures/kissatodo.png": (ROOT / "pictures" / "kissatodo.png", "image/png"),
+    "/pictures/fih.png": (ROOT / "pictures" / "fih.png", "image/png"),
+    "/pictures/raha.png": (ROOT / "pictures" / "raha.png", "image/png"),
+    "/pictures/paketti1.png": (ROOT / "pictures" / "paketti1.png", "image/png"),
+    "/pictures/paketti2.png": (ROOT / "pictures" / "paketti2.png", "image/png"),
+    "/pictures/paketti3.png": (ROOT / "pictures" / "paketti3.png", "image/png"),
 }
 
 DIFFICULTIES = {
@@ -69,6 +74,15 @@ PRESET_TASKS = (
     ("Koko kodin suursiivous", "kill"),
 )
 
+PACKAGE_RESOURCES = {
+    "puupalikat": ("🪵 puupalikka", "🪵 puupalikkaa"),
+    "kangas": ("🧵 kangas", "🧵 kangasta"),
+    "kuivaruoka": ("kala", "kalaa"),
+    "kolikko": ("raha", "rahaa"),
+}
+RESOURCE_IMAGES = {"kuivaruoka": "fih.png", "kolikko": "raha.png"}
+PACKAGE_IMAGES = ("paketti1.png", "paketti2.png", "paketti3.png")
+
 
 def new_state() -> dict:
     return {
@@ -111,6 +125,16 @@ def grant_reward(state: dict, reward: dict, multiplier: int = 1) -> None:
     state["xp"] += reward["xp"] * multiplier
 
 
+def grant_surprise_package(
+    state: dict,
+    multiplier: int = 1,
+) -> tuple[str, int, str]:
+    item = random.choice(INVENTORY_ITEMS)
+    state["inventory"][item] += multiplier
+    package_image = random.choice(PACKAGE_IMAGES)
+    return item, multiplier, package_image
+
+
 def ensure_daily_surprise(state: dict) -> dict:
     today = date.today().isoformat()
     surprise = state.get("daily_surprise")
@@ -137,6 +161,39 @@ def ensure_daily_surprise(state: dict) -> dict:
 
 def escape(value: object) -> str:
     return html.escape(str(value), quote=True)
+
+
+def render_surprise_package(
+    reward_package: tuple[str, int, str] | None,
+) -> str:
+    if reward_package is None:
+        return ""
+    item, amount, package_image = reward_package
+    if (
+        item not in PACKAGE_RESOURCES
+        or amount not in (1, 2)
+        or package_image not in PACKAGE_IMAGES
+    ):
+        return ""
+    resource_name = PACKAGE_RESOURCES[item][0 if amount == 1 else 1]
+    resource_image = RESOURCE_IMAGES.get(item)
+    resource_icon = (
+        f'<img class="package-resource-icon" src="/pictures/{resource_image}" alt="">'
+        if resource_image
+        else ""
+    )
+    return f"""
+      <section class="reward-package" aria-live="polite">
+        <details>
+          <summary><img class="package-thumb" src="/pictures/{package_image}" alt=""> siis ei voi olla todellista</summary>
+          <div class="package-reveal">
+            <img class="package-art" src="/pictures/{package_image}" alt="Avattu yllätyspaketti">
+            <p>Paketista paljastui:</p>
+            <strong>{resource_icon}{amount} {resource_name}</strong>
+          </div>
+        </details>
+      </section>
+    """
 
 
 def parse_subtasks(value: str) -> list[str]:
@@ -231,7 +288,11 @@ def render_task(task: dict) -> str:
     """
 
 
-def render_page(state: dict, error: str = "") -> bytes:
+def render_page(
+    state: dict,
+    error: str = "",
+    reward_package: tuple[str, int] | None = None,
+) -> bytes:
     template = TEMPLATE_FILE.read_text(encoding="utf-8")
     daily_surprise = ensure_daily_surprise(state)
     surprise_difficulty = DIFFICULTIES[daily_surprise["difficulty"]]
@@ -246,9 +307,9 @@ def render_page(state: dict, error: str = "") -> bytes:
         """
     daily_surprise_html = f"""
       <section class="daily-surprise" aria-labelledby="daily-surprise-title">
-        <div class="surprise-icon" aria-hidden="true">🎁</div>
+        <img class="surprise-image" src="/pictures/paketti1.png" alt="">
         <div class="surprise-content">
-          <p class="eyebrow">PÄIVÄN YLLÄTYS</p>
+          <p class="eyebrow">PÄIVÄN YLLÄTYSTEHTÄVÄ</p>
           <h2 id="daily-surprise-title">{escape(daily_surprise["name"])}</h2>
           <p class="surprise-meta">{surprise_difficulty["label"]} · {surprise_difficulty["duration"]}</p>
           <p class="surprise-reward">Tuplapalkinto: +{surprise_difficulty["xp"] * 2} XP ja kaikki resurssit kaksinkertaisina.</p>
@@ -268,8 +329,8 @@ def render_page(state: dict, error: str = "") -> bytes:
         for key, label in (
             ("puupalikat", "🪵 Puupalikat"),
             ("kangas", "🧵 Kangas"),
-            ("kuivaruoka", "🐟 Kala"),
-            ("kolikko", "🪙 Raha"),
+            ("kuivaruoka", '<img class="inventory-icon" src="/pictures/fih.png" alt=""> Kala'),
+            ("kolikko", '<img class="inventory-icon" src="/pictures/raha.png" alt=""> Raha'),
         )
     )
     preset_options = "\n".join(
@@ -284,6 +345,7 @@ def render_page(state: dict, error: str = "") -> bytes:
 
     page = (
         template.replace("{{TASKS}}", tasks)
+        .replace("{{REWARD_PACKAGE}}", render_surprise_package(reward_package))
         .replace("{{DAILY_SURPRISE}}", daily_surprise_html)
         .replace("{{INVENTORY}}", inventory)
         .replace("{{PRESET_OPTIONS}}", preset_options)
@@ -299,7 +361,8 @@ def render_page(state: dict, error: str = "") -> bytes:
 
 class TodoHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        asset = STATIC_FILES.get(urlparse(self.path).path)
+        parsed_url = urlparse(self.path)
+        asset = STATIC_FILES.get(parsed_url.path)
         if asset is not None:
             asset_path, content_type = asset
             try:
@@ -316,8 +379,20 @@ class TodoHandler(BaseHTTPRequestHandler):
 
         try:
             state = load_state()
-            error = parse_qs(urlparse(self.path).query).get("error", [""])[0]
-            body = render_page(state, error)
+            query = parse_qs(parsed_url.query)
+            error = query.get("error", [""])[0]
+            package_item = query.get("package", [None])[0]
+            package_image = query.get("art", [None])[0]
+            try:
+                package_amount = int(query.get("amount", ["0"])[0])
+            except ValueError:
+                package_amount = 0
+            reward_package = (
+                (package_item, package_amount, package_image)
+                if package_item is not None and package_image is not None
+                else None
+            )
+            body = render_page(state, error, reward_package)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             self.send_error(500, f"Sovelluksen tietojen lataaminen epäonnistui: {exc}")
             return
@@ -331,6 +406,7 @@ class TodoHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         form = parse_qs(self.rfile.read(length).decode("utf-8"))
         try:
+            reward_package: tuple[str, int, str] | None = None
             action = form.get("action", [""])[0]
             if action == "reset":
                 save_state(new_state())
@@ -373,7 +449,9 @@ class TodoHandler(BaseHTTPRequestHandler):
                 if task.get("subtasks"):
                     raise ValueError("Viimeistele kaikki osatehtävät ennen kokonaisbonusta.")
                 reward = DIFFICULTIES[task["difficulty"]]
-                grant_reward(state, reward, 2 if task.get("double_reward") else 1)
+                reward_multiplier = 2 if task.get("double_reward") else 1
+                grant_reward(state, reward, reward_multiplier)
+                reward_package = grant_surprise_package(state, reward_multiplier)
                 state["tasks"].remove(task)
             elif action == "complete_subtask":
                 task_id = form.get("task_id", [""])[0]
@@ -391,6 +469,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 state["xp"] += 5
                 state["inventory"]["kuivaruoka"] += 1
                 state["inventory"]["kolikko"] += 1
+                reward_package = grant_surprise_package(state)
                 if all(part["completed"] for part in task["subtasks"]):
                     reward = DIFFICULTIES[task["difficulty"]]
                     grant_reward(state, reward, 2 if task.get("double_reward") else 1)
@@ -398,12 +477,27 @@ class TodoHandler(BaseHTTPRequestHandler):
             else:
                 raise ValueError("Tuntematon toiminto.")
             save_state(state)
-            self.redirect()
+            self.redirect(reward_package=reward_package)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             self.redirect(str(exc))
 
-    def redirect(self, error: str = "") -> None:
-        location = "/" if not error else "/?" + urlencode({"error": error})
+    def redirect(
+        self,
+        error: str = "",
+        reward_package: tuple[str, int, str] | None = None,
+    ) -> None:
+        if error:
+            location = "/?" + urlencode({"error": error})
+        elif reward_package is not None:
+            location = "/?" + urlencode(
+                {
+                    "package": reward_package[0],
+                    "amount": reward_package[1],
+                    "art": reward_package[2],
+                }
+            )
+        else:
+            location = "/"
         self.send_response(303)
         self.send_header("Location", location)
         self.end_headers()
