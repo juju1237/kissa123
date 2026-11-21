@@ -8,6 +8,8 @@
 </head>
 <body>
   <main class="app-shell">
+    {{PET_SETUP}}
+    <div class="app-dashboard" {{DASHBOARD_HIDDEN}}>
     <header class="page-header">
       <div>
         <p class="eyebrow">PIENIÄ TEKOJA, ISOJA KEHRÄYKSIÄ</p>
@@ -18,14 +20,12 @@
 
     {{REWARD_PACKAGE}}
 
-    <section class="cat-card" aria-label="Virtuaalikissan tiedot">
-      <div class="cat-avatar">
-        <img class="cat-image" src="/pictures/kissatodo.png" alt="Muru-kissa" style="width: {{CAT_SIZE}}px">
-      </div>
+    <section class="cat-card" aria-label="Lemmikin tiedot">
+      <div class="cat-avatar">{{PET_VISUAL}}</div>
       <div class="cat-details">
-        <p class="eyebrow">KISSASI</p>
-        <h2>Muru <span class="level-badge">Taso {{LEVEL}}</span></h2>
-        <p class="cat-message">Jokainen tehtävä tuo Murulle tassupisteitä!</p>
+        <p class="eyebrow">LEMMIKKISI</p>
+        <h2>{{PET_NAME}} <span class="level-badge">Taso {{LEVEL}}</span></h2>
+        <p class="cat-message">Jokainen tehtävä ilahduttaa lemmikkiäsi!</p>
         <div class="progress-label"><span>Seuraava taso</span><span>{{PROGRESS}} / 100 XP</span></div>
         <div class="progress-track" role="progressbar" aria-label="Edistyminen seuraavalle tasolle" aria-valuenow="{{PROGRESS}}" aria-valuemin="0" aria-valuemax="100">
           <span style="width: {{PROGRESS}}%"></span>
@@ -40,7 +40,7 @@
       <div class="section-heading">
         <div>
           <p class="eyebrow">KERÄÄ PALKINTOJA</p>
-          <h2 id="inventory-title">Murun reppu</h2>
+          <h2 id="inventory-title">Lemmikin reppu</h2>
         </div>
         <span class="bag-icon" aria-hidden="true">🎒</span>
       </div>
@@ -92,6 +92,7 @@
         <button class="button button-reset" type="submit">Aloita alusta</button>
       </form>
     </footer>
+    </div>
   </main>
   <script>
     document.querySelectorAll(".reward-package details").forEach((details) => {

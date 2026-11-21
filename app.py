@@ -18,6 +18,8 @@ INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
 STATIC_FILES = {
     "/static/style.css": (ROOT / "static" / "style.css", "text/css; charset=utf-8"),
     "/pictures/kissatodo.png": (ROOT / "pictures" / "kissatodo.png", "image/png"),
+    "/pictures/lemon.png": (ROOT / "pictures" / "lemon.png", "image/png"),
+    "/pictures/kapy.png": (ROOT / "pictures" / "kapy.png", "image/png"),
     "/pictures/fih.png": (ROOT / "pictures" / "fih.png", "image/png"),
     "/pictures/raha.png": (ROOT / "pictures" / "raha.png", "image/png"),
     "/pictures/paketti1.png": (ROOT / "pictures" / "paketti1.png", "image/png"),
@@ -82,6 +84,11 @@ PACKAGE_RESOURCES = {
 }
 RESOURCE_IMAGES = {"kuivaruoka": "fih.png", "kolikko": "raha.png"}
 PACKAGE_IMAGES = ("paketti1.png", "paketti2.png", "paketti3.png")
+PET_TYPES = {
+    "cat": {"label": "Kissa", "image": "kissatodo.png"},
+    "lemon": {"label": "Sitruuna", "image": "lemon.png"},
+    "pinecone": {"label": "Käpy", "image": "kapy.png"},
+}
 
 
 def new_state() -> dict:
@@ -90,6 +97,7 @@ def new_state() -> dict:
         "inventory": {item: 0 for item in INVENTORY_ITEMS},
         "xp": 0,
         "daily_surprise": None,
+        "pet": None,
     }
 
 
@@ -161,6 +169,59 @@ def ensure_daily_surprise(state: dict) -> dict:
 
 def escape(value: object) -> str:
     return html.escape(str(value), quote=True)
+
+
+def is_valid_pet_profile(pet: object) -> bool:
+    return (
+        isinstance(pet, dict)
+        and pet.get("type") in PET_TYPES
+        and isinstance(pet.get("name"), str)
+        and bool(pet["name"].strip())
+        and len(pet["name"]) <= 24
+    )
+
+
+def render_pet_setup(error: str = "") -> str:
+    choices = []
+    for pet_type, pet in PET_TYPES.items():
+        if "image" in pet:
+            visual = f'<img src="/pictures/{pet["image"]}" alt="">'
+        choices.append(
+            f"""
+            <label class="pet-choice">
+              <input type="radio" name="pet_type" value="{pet_type}" required>
+              <span class="pet-choice-art">{visual}</span>
+              <strong>{pet["label"]}</strong>
+            </label>
+            """
+        )
+    error_html = f'<p class="form-error" role="alert">{escape(error)}</p>' if error else ""
+    return f"""
+      <section class="pet-setup" aria-labelledby="pet-setup-title">
+        <p class="eyebrow">TERVETULOA TASSUTEHTÄVIIN</p>
+        <h1 id="pet-setup-title">Valitse lemmikkisi</h1>
+        <p class="pet-setup-intro">Valitse kissa, sitruuna tai käpy ja anna lemmikillesi oma nimi.</p>
+        <form method="post" class="pet-setup-form">
+          <input type="hidden" name="action" value="save_pet">
+          <div class="pet-choice-grid">{"".join(choices)}</div>
+          <label for="pet-name">Lemmikin nimi</label>
+          <input id="pet-name" name="pet_name" type="text" maxlength="24" autocomplete="off" required placeholder="Kirjoita nimi">
+          {error_html}
+          <button class="button button-primary" type="submit">Jatka sovellukseen</button>
+        </form>
+      </section>
+    """
+
+
+def render_pet_visual(pet: dict, size: float) -> str:
+    pet_type = pet["type"]
+    pet_name = escape(pet["name"])
+    pet_kind = PET_TYPES[pet_type]
+    return (
+        f'<img class="pet-image" src="/pictures/{pet_kind["image"]}" '
+        f'alt="{pet_name}, {pet_kind["label"].lower()}" '
+        f'style="width: {size:.1f}px">'
+    )
 
 
 def render_surprise_package(
@@ -294,36 +355,45 @@ def render_page(
     reward_package: tuple[str, int] | None = None,
 ) -> bytes:
     template = TEMPLATE_FILE.read_text(encoding="utf-8")
-    daily_surprise = ensure_daily_surprise(state)
-    surprise_difficulty = DIFFICULTIES[daily_surprise["difficulty"]]
-    if daily_surprise["claimed"]:
-        surprise_action = '<p class="surprise-used">Päivän yllätys on jo käytetty. Uusi ehdotus tulee huomenna!</p>'
-    else:
-        surprise_action = """
-          <form method="post">
-            <input type="hidden" name="action" value="claim_daily_surprise">
-            <button class="button button-surprise" type="submit">Lisää tehtävälistalle</button>
-          </form>
+    pet = state.get("pet")
+    has_pet = is_valid_pet_profile(pet)
+    if has_pet:
+        pet_name = pet["name"]
+        pet_visual = render_pet_visual(pet, 96 * (1 + 0.03 * (state["xp"] // 30)))
+        daily_surprise = ensure_daily_surprise(state)
+        surprise_difficulty = DIFFICULTIES[daily_surprise["difficulty"]]
+        if daily_surprise["claimed"]:
+            surprise_action = '<p class="surprise-used">Päivän yllätys on jo käytetty. Uusi ehdotus tulee huomenna!</p>'
+        else:
+            surprise_action = """
+              <form method="post">
+                <input type="hidden" name="action" value="claim_daily_surprise">
+                <button class="button button-surprise" type="submit">Lisää tehtävälistalle</button>
+              </form>
+            """
+        daily_surprise_html = f"""
+          <section class="daily-surprise" aria-labelledby="daily-surprise-title">
+            <img class="surprise-image" src="/pictures/paketti1.png" alt="">
+            <div class="surprise-content">
+              <p class="eyebrow">PÄIVÄN YLLÄTYSTEHTÄVÄ</p>
+              <h2 id="daily-surprise-title">{escape(daily_surprise["name"])}</h2>
+              <p class="surprise-meta">{surprise_difficulty["label"]} · {surprise_difficulty["duration"]}</p>
+              <p class="surprise-reward">Tuplapalkinto: +{surprise_difficulty["xp"] * 2} XP ja kaikki resurssit kaksinkertaisina.</p>
+              {surprise_action}
+            </div>
+          </section>
         """
-    daily_surprise_html = f"""
-      <section class="daily-surprise" aria-labelledby="daily-surprise-title">
-        <img class="surprise-image" src="/pictures/paketti1.png" alt="">
-        <div class="surprise-content">
-          <p class="eyebrow">PÄIVÄN YLLÄTYSTEHTÄVÄ</p>
-          <h2 id="daily-surprise-title">{escape(daily_surprise["name"])}</h2>
-          <p class="surprise-meta">{surprise_difficulty["label"]} · {surprise_difficulty["duration"]}</p>
-          <p class="surprise-reward">Tuplapalkinto: +{surprise_difficulty["xp"] * 2} XP ja kaikki resurssit kaksinkertaisina.</p>
-          {surprise_action}
-        </div>
-      </section>
-    """
+    else:
+        pet_name = ""
+        pet_visual = ""
+        daily_surprise_html = ""
+
     tasks = "\n".join(render_task(task) for task in state["tasks"])
     if not tasks:
         tasks = '<li class="empty-state">Lista on tyhjä. Lisää ensimmäinen tehtäväsi!</li>'
 
     level = state["xp"] // 100 + 1
     progress = state["xp"] % 100
-    cat_size = 96 * (1 + 0.03 * (state["xp"] // 30))
     inventory = "\n".join(
         f'<li><span>{label}</span><strong>{state["inventory"][key]}</strong></li>'
         for key, label in (
@@ -342,10 +412,16 @@ def render_page(
         for key, item in DIFFICULTIES.items()
     )
     error_html = f'<p class="form-error" role="alert">{escape(error)}</p>' if error else ""
+    pet_setup = render_pet_setup(error) if not has_pet else ""
 
     page = (
         template.replace("{{TASKS}}", tasks)
-        .replace("{{REWARD_PACKAGE}}", render_surprise_package(reward_package))
+        .replace("{{PET_SETUP}}", pet_setup)
+        .replace("{{DASHBOARD_HIDDEN}}", "" if has_pet else "hidden")
+        .replace(
+            "{{REWARD_PACKAGE}}",
+            render_surprise_package(reward_package) if has_pet else "",
+        )
         .replace("{{DAILY_SURPRISE}}", daily_surprise_html)
         .replace("{{INVENTORY}}", inventory)
         .replace("{{PRESET_OPTIONS}}", preset_options)
@@ -354,8 +430,9 @@ def render_page(
         .replace("{{LEVEL}}", str(level))
         .replace("{{XP}}", str(state["xp"]))
         .replace("{{PROGRESS}}", str(progress))
-        .replace("{{CAT_SIZE}}", f"{cat_size:.1f}")
+        .replace("{{PET_VISUAL}}", pet_visual)
     )
+    page = page.replace("{{PET_NAME}}", escape(pet_name))
     return page.encode("utf-8")
 
 
@@ -414,7 +491,17 @@ class TodoHandler(BaseHTTPRequestHandler):
                 return
 
             state = load_state()
-            if action == "claim_daily_surprise":
+            if action == "save_pet":
+                pet_type = form.get("pet_type", [""])[0]
+                pet_name = form.get("pet_name", [""])[0].strip()
+                if pet_type not in PET_TYPES:
+                    raise ValueError("Valitse lemmikiksi kissa, sitruuna tai käpy.")
+                if not pet_name or len(pet_name) > 24:
+                    raise ValueError("Kirjoita lemmikille nimi (1–24 merkkiä).")
+                if is_valid_pet_profile(state.get("pet")):
+                    raise ValueError("Lemmikki on jo valittu.")
+                state["pet"] = {"type": pet_type, "name": pet_name}
+            elif action == "claim_daily_surprise":
                 surprise = ensure_daily_surprise(state)
                 if surprise["claimed"]:
                     raise ValueError("Päivän yllätys on jo käytetty.")

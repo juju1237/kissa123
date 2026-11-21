@@ -27,6 +27,51 @@ button, input, select, textarea { font: inherit; }
   padding: 44px 0 28px;
 }
 
+.app-dashboard[hidden] { display: none; }
+
+.pet-setup {
+  width: min(100%, 560px);
+  margin: clamp(30px, 8vh, 80px) auto;
+  padding: clamp(22px, 6vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: 0 8px 26px rgb(68 48 30 / 4%);
+}
+
+.pet-setup h1 { margin-bottom: 8px; }
+.pet-setup-intro { margin-bottom: 22px; color: var(--muted); line-height: 1.5; }
+.pet-setup-form { display: grid; gap: 12px; }
+.pet-setup-form > label { font-size: .85rem; font-weight: 700; }
+.pet-choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+.pet-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+.pet-choice:has(input:checked) { border-color: var(--purple); background: var(--lavender); }
+.pet-choice:focus-within { outline: 3px solid #d5c8fa; outline-offset: 2px; }
+.pet-choice input[type="radio"] {
+  appearance: auto;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  accent-color: var(--purple);
+}
+.pet-choice-art { display: grid; width: 64px; height: 64px; place-items: center; }
+.pet-choice-art img { width: 64px; height: 64px; object-fit: contain; }
+.pet-setup-form .button { justify-self: start; }
+
 .page-header { margin-bottom: 24px; }
 
 h1, h2, p { margin-top: 0; }
@@ -79,7 +124,7 @@ h1 span { font-size: .75em; }
   padding: 8px;
 }
 
-.cat-image {
+.pet-image {
   display: block;
   max-width: 100%;
   height: auto;
@@ -349,6 +394,7 @@ footer p { margin-bottom: 8px; }
 
 @media (max-width: 580px) {
   .app-shell { padding-top: 28px; }
+  .pet-setup { margin-top: 24px; }
   .cat-card { align-items: flex-start; gap: 15px; padding: 18px; }
   .cat-avatar { max-width: 34vw; border-radius: 20px; }
   .cat-message { margin-bottom: 14px; }
