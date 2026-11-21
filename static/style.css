@@ -170,7 +170,7 @@ h1 span { font-size: .75em; }
 .add-form label { color: #5e5661; font-size: .78rem; font-weight: 700; }
 .form-row { display: flex; gap: 8px; }
 
-input, select {
+input, select, textarea {
   width: 100%;
   min-width: 0;
   padding: 10px 11px;
@@ -181,7 +181,12 @@ input, select {
   font-size: .85rem;
 }
 
-input:focus, select:focus, button:focus-visible {
+textarea {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+input:focus, select:focus, textarea:focus, button:focus-visible {
   outline: 3px solid #d5c8fa;
   outline-offset: 2px;
 }
@@ -213,18 +218,36 @@ input:focus, select:focus, button:focus-visible {
 
 .task-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  flex-direction: column;
+  gap: 12px;
   padding: 13px 15px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
 }
 
+.task-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
 .task-info { display: grid; gap: 4px; }
 .task-info strong { font-size: .92rem; }
 .task-meta { color: var(--muted); font-size: .75rem; }
+.subtasks-panel { padding-top: 11px; border-top: 1px solid var(--line); }
+.subtasks-heading { display: flex; justify-content: space-between; gap: 12px; font-size: .8rem; }
+.subtasks-heading span, .subtask-reward-note { color: var(--muted); }
+.subtask-list { display: grid; gap: 6px; margin: 9px 0 0; padding: 0; list-style: none; }
+.subtask-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 9px; background: #faf8f4; font-size: .82rem; }
+.subtask-row-done { background: #f2f7f0; }
+.subtask-row-done .subtask-name { color: var(--muted); text-decoration: line-through; }
+.subtask-complete-form { margin: 0; }
+.subtask-done { flex: 0 0 auto; color: #3e7548; font-size: .76rem; font-weight: 700; }
+.button-subtask { padding: 7px 10px; background: var(--green); color: #3e7548; font-size: .75rem; white-space: nowrap; }
+.button-subtask:hover { background: #d7edda; }
+.subtask-reward-note { margin: 8px 0 0; font-size: .73rem; line-height: 1.45; }
 .button-complete { background: var(--green); color: #3e7548; }
 .button-complete:hover { background: #d7edda; }
 .empty-state { padding: 18px; color: var(--muted); text-align: center; }
@@ -256,4 +279,5 @@ footer p { margin-bottom: 8px; }
 @media (max-width: 370px) {
   .cat-card { flex-direction: column; }
   .form-row { flex-direction: column; }
+  .task-main, .subtask-row { align-items: flex-start; }
 }

@@ -106,19 +106,85 @@ def escape(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def parse_subtasks(value: str) -> list[str]:
+    subtasks = [line.strip() for line in value.splitlines() if line.strip()]
+    if subtasks and len(subtasks) < 2:
+        raise ValueError("Kirjoita vähintään kaksi osatehtävää.")
+    if len(subtasks) > 10:
+        raise ValueError("Tehtävässä voi olla enintään 10 osaa.")
+    if any(len(subtask) > 80 for subtask in subtasks):
+        raise ValueError("Osatehtävän nimi voi olla enintään 80 merkkiä.")
+    return subtasks
+
+
+def render_subtasks(task: dict, difficulty: dict) -> str:
+    subtasks = task.get("subtasks", [])
+    if not subtasks:
+        return ""
+
+    completed_count = sum(subtask["completed"] for subtask in subtasks)
+    rows = []
+    for subtask in subtasks:
+        name = escape(subtask["name"])
+        if subtask["completed"]:
+            action = '<span class="subtask-done">Valmis ✓</span>'
+            row_class = "subtask-row subtask-row-done"
+        else:
+            action = f"""
+              <form method="post" class="subtask-complete-form">
+                <input type="hidden" name="action" value="complete_subtask">
+                <input type="hidden" name="task_id" value="{escape(task["id"])}">
+                <input type="hidden" name="subtask_id" value="{escape(subtask["id"])}">
+                <button class="button button-subtask" type="submit">Valmis · +5 XP</button>
+              </form>
+            """
+            row_class = "subtask-row"
+        rows.append(f'<li class="{row_class}"><span class="subtask-name">{name}</span>{action}</li>')
+
+    return f"""
+      <div class="subtasks-panel">
+        <div class="subtasks-heading">
+          <strong>Osatehtävät</strong>
+          <span>{completed_count} / {len(subtasks)} valmiina</span>
+        </div>
+        <ul class="subtask-list">{"".join(rows)}</ul>
+        <p class="subtask-reward-note">Jokaisesta osasta +5 XP, 1 kuivaruoka ja 1 kolikko. Kaikkien osien valmistumisesta lisäksi +{difficulty["xp"]} XP:n kokonaisbonus palkintoineen.</p>
+      </div>
+    """
+
+
 def render_task(task: dict) -> str:
     difficulty = DIFFICULTIES[task["difficulty"]]
+    subtasks = task.get("subtasks", [])
+    if subtasks:
+        completed_count = sum(subtask["completed"] for subtask in subtasks)
+        task_meta = (
+            f'{difficulty["label"]} · {difficulty["duration"]} · '
+            f'{completed_count}/{len(subtasks)} osaa · kokonaisbonus +{difficulty["xp"]} XP'
+        )
+        subtask_html = render_subtasks(task, difficulty)
+        action_html = ""
+    else:
+        task_meta = f'{difficulty["label"]} · {difficulty["duration"]} · +{difficulty["xp"]} tassupistettä'
+        subtask_html = ""
+        action_html = f"""
+          <form method="post" class="complete-form">
+            <input type="hidden" name="action" value="complete">
+            <input type="hidden" name="task_id" value="{escape(task["id"])}">
+            <button class="button button-complete" type="submit">Valmis!</button>
+          </form>
+        """
+
     return f"""
       <li class="task-card">
-        <div class="task-info">
-          <strong>{escape(task["name"])}</strong>
-          <span class="task-meta">{difficulty["label"]} · {difficulty["duration"]} · +{difficulty["xp"]} tassupistettä</span>
+        <div class="task-main">
+          <div class="task-info">
+            <strong>{escape(task["name"])}</strong>
+            <span class="task-meta">{task_meta}</span>
+          </div>
+          {action_html}
         </div>
-        <form method="post" class="complete-form">
-          <input type="hidden" name="action" value="complete">
-          <input type="hidden" name="task_id" value="{escape(task["id"])}">
-          <button class="button button-complete" type="submit">Valmis!</button>
-        </form>
+        {subtask_html}
       </li>
     """
 
@@ -211,7 +277,8 @@ class TodoHandler(BaseHTTPRequestHandler):
                 difficulty = next((level for preset, level in PRESET_TASKS if preset == name), None)
                 if difficulty is None:
                     raise ValueError("Valitse tehtävä valmiista listasta.")
-                add_task(state, name, difficulty)
+                subtasks = parse_subtasks(form.get("subtasks", [""])[0])
+                add_task(state, name, difficulty, subtasks)
             elif action == "add_custom":
                 name = form.get("name", [""])[0].strip()
                 difficulty = form.get("difficulty", [""])[0]
@@ -219,17 +286,42 @@ class TodoHandler(BaseHTTPRequestHandler):
                     raise ValueError("Kirjoita tehtävän nimi (1–80 merkkiä).")
                 if difficulty not in DIFFICULTIES:
                     raise ValueError("Valitse tehtävälle vaikeustaso.")
-                add_task(state, name, difficulty)
+                subtasks = parse_subtasks(form.get("subtasks", [""])[0])
+                add_task(state, name, difficulty, subtasks)
             elif action == "complete":
                 task_id = form.get("task_id", [""])[0]
                 task = next((task for task in state["tasks"] if task["id"] == task_id), None)
                 if task is None:
                     raise ValueError("Tehtävää ei löytynyt. Päivitä sivu ja yritä uudelleen.")
+                if task.get("subtasks"):
+                    raise ValueError("Viimeistele kaikki osatehtävät ennen kokonaisbonusta.")
                 reward = DIFFICULTIES[task["difficulty"]]
                 for item, amount in reward["rewards"].items():
                     state["inventory"][item] += amount
                 state["xp"] += reward["xp"]
                 state["tasks"].remove(task)
+            elif action == "complete_subtask":
+                task_id = form.get("task_id", [""])[0]
+                subtask_id = form.get("subtask_id", [""])[0]
+                task = next((task for task in state["tasks"] if task["id"] == task_id), None)
+                if task is None or not task.get("subtasks"):
+                    raise ValueError("Jaettua tehtävää ei löytynyt.")
+                subtask = next(
+                    (part for part in task["subtasks"] if part["id"] == subtask_id),
+                    None,
+                )
+                if subtask is None or subtask["completed"]:
+                    raise ValueError("Osatehtävä on jo valmis tai sitä ei löytynyt.")
+                subtask["completed"] = True
+                state["xp"] += 5
+                state["inventory"]["kuivaruoka"] += 1
+                state["inventory"]["kolikko"] += 1
+                if all(part["completed"] for part in task["subtasks"]):
+                    reward = DIFFICULTIES[task["difficulty"]]
+                    for item, amount in reward["rewards"].items():
+                        state["inventory"][item] += amount
+                    state["xp"] += reward["xp"]
+                    state["tasks"].remove(task)
             else:
                 raise ValueError("Tuntematon toiminto.")
             save_state(state)
@@ -247,9 +339,22 @@ class TodoHandler(BaseHTTPRequestHandler):
         print(f"{self.address_string()} - {format % args}")
 
 
-def add_task(state: dict, name: str, difficulty: str) -> None:
+def add_task(
+    state: dict,
+    name: str,
+    difficulty: str,
+    subtasks: list[str] | None = None,
+) -> None:
     state["tasks"].append(
-        {"id": uuid.uuid4().hex, "name": name, "difficulty": difficulty}
+        {
+            "id": uuid.uuid4().hex,
+            "name": name,
+            "difficulty": difficulty,
+            "subtasks": [
+                {"id": uuid.uuid4().hex, "name": subtask, "completed": False}
+                for subtask in (subtasks or [])
+            ],
+        }
     )
 
 

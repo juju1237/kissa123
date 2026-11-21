@@ -59,6 +59,8 @@
             <select id="preset" name="preset" required>{{PRESET_OPTIONS}}</select>
             <button class="button button-secondary" type="submit">Lisää</button>
           </div>
+          <label for="preset-subtasks">Jaa osiin (valinnainen, yksi osa per rivi)</label>
+          <textarea id="preset-subtasks" name="subtasks" rows="3" maxlength="850" placeholder="Esim. lue tehtävänanto&#10;tee ensimmäinen tehtävä"></textarea>
         </form>
         <form method="post" class="add-form">
           <input type="hidden" name="action" value="add_custom">
@@ -69,6 +71,8 @@
             <select id="difficulty" name="difficulty" required>{{DIFFICULTY_OPTIONS}}</select>
             <button class="button button-primary" type="submit">Lisää tehtävä</button>
           </div>
+          <label for="custom-subtasks">Jaa osiin (valinnainen, yksi osa per rivi)</label>
+          <textarea id="custom-subtasks" name="subtasks" rows="3" maxlength="850" placeholder="Esim. etsi lähteet&#10;kirjoita ensimmäinen kappale"></textarea>
         </form>
       </div>
       {{ERROR}}
