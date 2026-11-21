@@ -13,6 +13,10 @@ ROOT = Path(__file__).parent
 STATE_FILE = ROOT / "data" / "state.json"
 TEMPLATE_FILE = ROOT / "templates" / "index.html"
 INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
+STATIC_FILES = {
+    "/static/style.css": (ROOT / "static" / "style.css", "text/css; charset=utf-8"),
+    "/pictures/kissatodo.png": (ROOT / "pictures" / "kissatodo.png", "image/png"),
+}
 
 DIFFICULTIES = {
     "super_easy": {
@@ -127,6 +131,7 @@ def render_page(state: dict, error: str = "") -> bytes:
 
     level = state["xp"] // 100 + 1
     progress = state["xp"] % 100
+    cat_size = 96 * (1 + 0.03 * (state["xp"] // 30))
     inventory = "\n".join(
         f'<li><span>{label}</span><strong>{state["inventory"][key]}</strong></li>'
         for key, label in (
@@ -155,12 +160,28 @@ def render_page(state: dict, error: str = "") -> bytes:
         .replace("{{LEVEL}}", str(level))
         .replace("{{XP}}", str(state["xp"]))
         .replace("{{PROGRESS}}", str(progress))
+        .replace("{{CAT_SIZE}}", f"{cat_size:.1f}")
     )
     return page.encode("utf-8")
 
 
 class TodoHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
+        asset = STATIC_FILES.get(urlparse(self.path).path)
+        if asset is not None:
+            asset_path, content_type = asset
+            try:
+                body = asset_path.read_bytes()
+            except OSError as exc:
+                self.send_error(404, f"Tiedoston lataaminen epäonnistui: {exc}")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         try:
             state = load_state()
             error = parse_qs(urlparse(self.path).query).get("error", [""])[0]

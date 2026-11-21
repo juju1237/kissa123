@@ -67,14 +67,23 @@ h1 span { font-size: .75em; }
 }
 
 .cat-avatar {
-  display: grid;
-  flex: 0 0 118px;
-  height: 118px;
-  place-items: center;
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: min(42vw, 320px);
   border: 1px solid #e8defc;
   border-radius: 28px;
   background: #fff;
-  font-size: 4.7rem;
+  padding: 8px;
+}
+
+.cat-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  transition: width .25s ease;
 }
 
 .cat-details { flex: 1; }
@@ -231,7 +240,7 @@ footer {
 @media (max-width: 580px) {
   .app-shell { padding-top: 28px; }
   .cat-card { align-items: flex-start; gap: 15px; padding: 18px; }
-  .cat-avatar { flex-basis: 76px; height: 76px; border-radius: 20px; font-size: 3.2rem; }
+  .cat-avatar { max-width: 34vw; border-radius: 20px; }
   .cat-message { margin-bottom: 14px; }
   .inventory-card, .tasks-section { padding: 18px; }
   .inventory-list { grid-template-columns: repeat(2, 1fr); }
