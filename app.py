@@ -199,8 +199,13 @@ class TodoHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         form = parse_qs(self.rfile.read(length).decode("utf-8"))
         try:
-            state = load_state()
             action = form.get("action", [""])[0]
+            if action == "reset":
+                save_state(new_state())
+                self.redirect()
+                return
+
+            state = load_state()
             if action == "add_preset":
                 name = form.get("preset", [""])[0]
                 difficulty = next((level for preset, level in PRESET_TASKS if preset == name), None)

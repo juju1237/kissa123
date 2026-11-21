@@ -237,6 +237,12 @@ footer {
   text-align: center;
 }
 
+footer p { margin-bottom: 8px; }
+.reset-warning { margin-top: 20px; font-size: .75rem; }
+.reset-form { margin-top: 10px; }
+.button-reset { border: 1px solid #e8c9cd; background: #fff7f7; color: #983b49; }
+.button-reset:hover { background: #ffeded; }
+
 @media (max-width: 580px) {
   .app-shell { padding-top: 28px; }
   .cat-card { align-items: flex-start; gap: 15px; padding: 18px; }

@@ -76,7 +76,14 @@
       <ul class="task-list">{{TASKS}}</ul>
     </section>
 
-    <footer>Sinun tahtisi riittää. Lepopäiväkin kuuluu hyvään viikkoon. 🌿</footer>
+    <footer>
+      <p>Sinun tahtisi riittää. Lepopäiväkin kuuluu hyvään viikkoon. 🌿</p>
+      <p class="reset-warning">Nollaus poistaa tehtävät, palkinnot ja tassupisteet.</p>
+      <form method="post" class="reset-form" onsubmit="return confirm('Haluatko varmasti aloittaa alusta? Kaikki tehtävät, palkinnot ja tassupisteet nollataan. Tätä ei voi perua.');">
+        <input type="hidden" name="action" value="reset">
+        <button class="button button-reset" type="submit">Aloita alusta</button>
+      </form>
+    </footer>
   </main>
 </body>
 </html>
