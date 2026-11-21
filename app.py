@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 ROOT = Path(__file__).parent
 STATE_FILE = ROOT / "data" / "state.json"
 TEMPLATE_FILE = ROOT / "templates" / "index.html"
+HOME_TEMPLATE_FILE = ROOT / "templates" / "home.html"
 INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
 WEEKLY_TASK_GOAL = 15
 STATIC_FILES = {
@@ -90,6 +91,49 @@ PET_TYPES = {
     "lemon": {"label": "Sitruuna", "image": "lemon.png"},
     "pinecone": {"label": "Käpy", "image": "kapy.png"},
 }
+RECIPES = {
+    "refined_wood": {
+        "name": "Jalostettu puu",
+        "icon": "🪵",
+        "output": "jalostettu_puu",
+        "ingredients": {"puupalikat": 3},
+    },
+    "pet_bed": {
+        "name": "Lemmikin sänky",
+        "icon": "🛏️",
+        "output": "lemmikin_sanky",
+        "ingredients": {"puupalikat": 3, "kangas": 2},
+    },
+    "pet_toy": {
+        "name": "Pehmolelu",
+        "icon": "🧸",
+        "output": "pehmolelu",
+        "ingredients": {"kangas": 2, "kuivaruoka": 1},
+    },
+    "treat": {
+        "name": "Herkku",
+        "icon": "🍪",
+        "output": "herkku",
+        "ingredients": {"kuivaruoka": 3},
+    },
+}
+CRAFTED_ITEMS = {
+    "jalostettu_puu": "Jalostettu puu",
+    "lemmikin_sanky": "Lemmikin sänky",
+    "pehmolelu": "Pehmolelu",
+    "herkku": "Herkku",
+}
+HOME_ITEMS = {
+    "lemmikin_sanky": {"name": "Lemmikin sänky", "icon": "🛏️"},
+    "pehmolelu": {"name": "Pehmolelu", "icon": "🧸"},
+}
+RESOURCE_LABELS = {
+    "puupalikat": "Puupalikka",
+    "kangas": "Kangas",
+    "kuivaruoka": "Kala",
+    "kolikko": "Raha",
+}
+TREAT_XP = 20
 
 
 def new_state() -> dict:
@@ -100,6 +144,9 @@ def new_state() -> dict:
         "daily_surprise": None,
         "pet": None,
         "weekly_goal": None,
+        "crafted_items": {item: 0 for item in CRAFTED_ITEMS},
+        "discovered_recipes": [],
+        "home_items": [],
     }
 
 
@@ -118,6 +165,24 @@ def load_state() -> dict:
     for item in INVENTORY_ITEMS:
         if not isinstance(state["inventory"].get(item), int):
             raise ValueError("Tallennetut inventaariotiedot ovat virheelliset.")
+    crafted_items = state.setdefault("crafted_items", {})
+    if not isinstance(crafted_items, dict):
+        raise ValueError("Tallennetut askartelutiedot ovat virheelliset.")
+    for item in CRAFTED_ITEMS:
+        crafted_items.setdefault(item, 0)
+        if type(crafted_items[item]) is not int or crafted_items[item] < 0:
+            raise ValueError("Tallennetut askartelutiedot ovat virheelliset.")
+    discovered_recipes = state.setdefault("discovered_recipes", [])
+    if not isinstance(discovered_recipes, list) or any(
+        recipe_id not in RECIPES for recipe_id in discovered_recipes
+    ):
+        raise ValueError("Tallennetut reseptitiedot ovat virheelliset.")
+    home_items = state.setdefault("home_items", [])
+    if not isinstance(home_items, list) or any(
+        not isinstance(item, str) or item not in HOME_ITEMS
+        for item in home_items
+    ):
+        raise ValueError("Tallennetut lemmikin kodin tiedot ovat virheelliset.")
     return state
 
 
@@ -372,6 +437,154 @@ def render_task(task: dict) -> str:
     """
 
 
+def render_recipe_card(state: dict, recipe_id: str, recipe: dict) -> str:
+    discovered = recipe_id in state["discovered_recipes"]
+    ingredients_available = all(
+        state["inventory"][item] >= amount
+        for item, amount in recipe["ingredients"].items()
+    )
+    ingredient_rows = "\n".join(
+        f'<li><span>{amount} × {RESOURCE_LABELS[item]}</span>'
+        f'<strong>{state["inventory"][item]} / {amount}</strong></li>'
+        for item, amount in recipe["ingredients"].items()
+    )
+    recipe_class = "recipe-card discovered" if discovered else "recipe-card locked"
+    output_name = recipe["name"] if discovered else "???"
+    if ingredients_available:
+        button_label = "Valmista" if discovered else "Kokeile reseptiä"
+        action = f"""
+          <form method="post" class="craft-form">
+            <input type="hidden" name="action" value="craft">
+            <input type="hidden" name="recipe_id" value="{recipe_id}">
+            <button class="button button-craft" type="submit">{button_label}</button>
+          </form>
+        """
+    else:
+        action = '<button class="button button-craft" type="button" disabled>Ainekset puuttuvat</button>'
+    treat_note = (
+        f'<p class="recipe-note">Anna herkku lemmikillesi: +{TREAT_XP} XP.</p>'
+        if recipe["output"] == "herkku" and discovered
+        else ""
+    )
+    return f"""
+      <article class="{recipe_class}">
+        <div class="recipe-output">
+          <span class="recipe-icon" aria-hidden="true">{recipe["icon"]}</span>
+          <h4>{output_name}</h4>
+        </div>
+        <ul class="ingredient-list">{ingredient_rows}</ul>
+        {treat_note}
+        {action}
+      </article>
+    """
+
+
+def render_crafting_section(state: dict) -> str:
+    crafted_items = "\n".join(
+        f'<li><span>{recipe["icon"]} {name}</span><strong>{state["crafted_items"][item]}</strong></li>'
+        for item, name in CRAFTED_ITEMS.items()
+        for recipe in RECIPES.values()
+        if recipe["output"] == item
+    )
+    treat_count = state["crafted_items"]["herkku"]
+    if treat_count:
+        treat_action = f"""
+          <form method="post" class="use-treat-form">
+            <input type="hidden" name="action" value="use_treat">
+            <button class="button button-craft" type="submit">Anna herkku lemmikille (+{TREAT_XP} XP)</button>
+          </form>
+        """
+    else:
+        treat_action = ""
+    recipes = "\n".join(
+        render_recipe_card(state, recipe_id, recipe)
+        for recipe_id, recipe in RECIPES.items()
+    )
+    return f"""
+      <section class="crafting-section" aria-labelledby="crafting-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">YHDISTÄ RESURSSEJA</p>
+            <h2 id="crafting-title">Askartelu</h2>
+          </div>
+        </div>
+        <div class="crafting-stock">
+          <h3>Valmistetut palkinnot</h3>
+          <ul class="crafted-list">{crafted_items}</ul>
+          {treat_action}
+        </div>
+        <h3 class="recipe-book-title">Reseptikirja</h3>
+        <p class="recipe-book-hint">Tuntemattomat palkinnot näkyvät siluetteina. Kokeile reseptiä, kun ainekset riittävät.</p>
+        <div class="recipe-grid">{recipes}</div>
+      </section>
+    """
+
+
+def render_home_item(item_id: str) -> str:
+    item = HOME_ITEMS[item_id]
+    return f"""
+      <article class="home-object">
+        <span class="home-object-icon" aria-hidden="true">{item["icon"]}</span>
+        <strong>{item["name"]}</strong>
+        <form method="post">
+          <input type="hidden" name="action" value="remove_from_home">
+          <input type="hidden" name="item_id" value="{item_id}">
+          <button class="button button-secondary" type="submit">Siirrä reppuun</button>
+        </form>
+      </article>
+    """
+
+
+def render_home_page(state: dict, error: str = "") -> bytes:
+    pet = state.get("pet")
+    if not is_valid_pet_profile(pet):
+        return render_page(state, error)
+
+    placed_items = "\n".join(
+        render_home_item(item_id) for item_id in state["home_items"]
+    )
+    if not placed_items:
+        placed_items = """
+          <p class="home-empty">Koti odottaa vielä ensimmäisiä tavaroitaan.
+          Askartele lemmikille sänky tai pehmolelu, niin voit tuoda sen tänne.</p>
+        """
+
+    available_items = []
+    for item_id, item in HOME_ITEMS.items():
+        count = state["crafted_items"][item_id]
+        if count:
+            available_items.append(
+                f"""
+                  <li class="home-build-item">
+                    <span><span aria-hidden="true">{item["icon"]}</span> {item["name"]}</span>
+                    <strong>{count} repussa</strong>
+                    <form method="post">
+                      <input type="hidden" name="action" value="add_to_home">
+                      <input type="hidden" name="item_id" value="{item_id}">
+                      <button class="button button-primary" type="submit">Lisää kotiin</button>
+                    </form>
+                  </li>
+                """
+            )
+    if not available_items:
+        available_items_html = (
+            '<p class="home-build-empty">Askarteluvarastossasi ei ole vielä '
+            'sisustusesineitä. Valmista sänky tai pehmolelu tehtäväsivulla.</p>'
+        )
+    else:
+        available_items_html = f'<ul class="home-build-list">{"".join(available_items)}</ul>'
+
+    template = HOME_TEMPLATE_FILE.read_text(encoding="utf-8")
+    page = (
+        template.replace("{{PET_NAME}}", escape(pet["name"]))
+        .replace("{{PET_VISUAL}}", render_pet_visual(pet, 120))
+        .replace("{{PLACED_ITEMS}}", placed_items)
+        .replace("{{AVAILABLE_ITEMS}}", available_items_html)
+        .replace("{{ERROR}}", f'<p class="form-error" role="alert">{escape(error)}</p>' if error else "")
+    )
+    return page.encode("utf-8")
+
+
 def render_page(
     state: dict,
     error: str = "",
@@ -466,6 +679,7 @@ def render_page(
     )
     error_html = f'<p class="form-error" role="alert">{escape(error)}</p>' if error else ""
     pet_setup = render_pet_setup(error) if not has_pet else ""
+    crafting_html = render_crafting_section(state)
 
     page = (
         template.replace("{{TASKS}}", tasks)
@@ -478,6 +692,7 @@ def render_page(
         .replace("{{DAILY_SURPRISE}}", daily_surprise_html)
         .replace("{{WEEKLY_GOAL}}", weekly_goal_html)
         .replace("{{INVENTORY}}", inventory)
+        .replace("{{CRAFTING}}", crafting_html)
         .replace("{{PRESET_OPTIONS}}", preset_options)
         .replace("{{DIFFICULTY_OPTIONS}}", difficulty_options)
         .replace("{{ERROR}}", error_html)
@@ -508,6 +723,10 @@ class TodoHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
 
+        if parsed_url.path not in ("/", "/home"):
+            self.send_error(404)
+            return
+
         try:
             state = load_state()
             query = parse_qs(parsed_url.query)
@@ -523,7 +742,15 @@ class TodoHandler(BaseHTTPRequestHandler):
                 if package_item is not None and package_image is not None
                 else None
             )
-            body = render_page(state, error, reward_package)
+            if parsed_url.path == "/home":
+                if not is_valid_pet_profile(state.get("pet")):
+                    self.send_response(303)
+                    self.send_header("Location", "/")
+                    self.end_headers()
+                    return
+                body = render_home_page(state, error)
+            else:
+                body = render_page(state, error, reward_package)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             self.send_error(500, f"Sovelluksen tietojen lataaminen epäonnistui: {exc}")
             return
@@ -539,6 +766,11 @@ class TodoHandler(BaseHTTPRequestHandler):
         try:
             reward_package: tuple[str, int, str] | None = None
             action = form.get("action", [""])[0]
+            redirect_path = (
+                "/home"
+                if action in ("add_to_home", "remove_from_home")
+                else "/"
+            )
             if action == "reset":
                 save_state(new_state())
                 self.redirect()
@@ -555,6 +787,42 @@ class TodoHandler(BaseHTTPRequestHandler):
                 if is_valid_pet_profile(state.get("pet")):
                     raise ValueError("Lemmikki on jo valittu.")
                 state["pet"] = {"type": pet_type, "name": pet_name}
+            elif action == "craft":
+                recipe_id = form.get("recipe_id", [""])[0]
+                recipe = RECIPES.get(recipe_id)
+                if recipe is None:
+                    raise ValueError("Reseptiä ei löytynyt.")
+                if any(
+                    state["inventory"][item] < amount
+                    for item, amount in recipe["ingredients"].items()
+                ):
+                    raise ValueError("Reseptiin ei ole riittävästi aineksia.")
+                for item, amount in recipe["ingredients"].items():
+                    state["inventory"][item] -= amount
+                state["crafted_items"][recipe["output"]] += 1
+                if recipe_id not in state["discovered_recipes"]:
+                    state["discovered_recipes"].append(recipe_id)
+            elif action == "use_treat":
+                if state["crafted_items"]["herkku"] < 1:
+                    raise ValueError("Inventaarioissa ei ole herkkua käytettäväksi.")
+                state["crafted_items"]["herkku"] -= 1
+                state["xp"] += TREAT_XP
+            elif action == "add_to_home":
+                item_id = form.get("item_id", [""])[0]
+                if item_id not in HOME_ITEMS:
+                    raise ValueError("Tätä esinettä ei voi lisätä lemmikin kotiin.")
+                if state["crafted_items"][item_id] < 1:
+                    raise ValueError("Askarteluvarastossa ei ole tätä esinettä.")
+                state["crafted_items"][item_id] -= 1
+                state["home_items"].append(item_id)
+                redirect_path = "/home"
+            elif action == "remove_from_home":
+                item_id = form.get("item_id", [""])[0]
+                if item_id not in HOME_ITEMS or item_id not in state["home_items"]:
+                    raise ValueError("Esinettä ei löytynyt lemmikin kodista.")
+                state["home_items"].remove(item_id)
+                state["crafted_items"][item_id] += 1
+                redirect_path = "/home"
             elif action == "claim_daily_surprise":
                 surprise = ensure_daily_surprise(state)
                 if surprise["claimed"]:
@@ -620,19 +888,20 @@ class TodoHandler(BaseHTTPRequestHandler):
             else:
                 raise ValueError("Tuntematon toiminto.")
             save_state(state)
-            self.redirect(reward_package=reward_package)
+            self.redirect(reward_package=reward_package, path=redirect_path)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            self.redirect(str(exc))
+            self.redirect(str(exc), path=redirect_path)
 
     def redirect(
         self,
         error: str = "",
         reward_package: tuple[str, int, str] | None = None,
+        path: str = "/",
     ) -> None:
         if error:
-            location = "/?" + urlencode({"error": error})
+            location = path + "?" + urlencode({"error": error})
         elif reward_package is not None:
-            location = "/?" + urlencode(
+            location = path + "?" + urlencode(
                 {
                     "package": reward_package[0],
                     "amount": reward_package[1],
@@ -640,7 +909,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 }
             )
         else:
-            location = "/"
+            location = path
         self.send_response(303)
         self.send_header("Location", location)
         self.end_headers()

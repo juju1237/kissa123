@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lemmikin koti — alota jo</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">LEMMIKIN OMA PAIKKA</p>
+        <h1>Lemmikin koti</h1>
+        <p class="subtitle">Tervetuloa kotiin, {{PET_NAME}}! Tee kodista lemmikkisi näköinen yksi askartelu kerrallaan.</p>
+      </div>
+      <nav class="page-nav" aria-label="Sivut">
+        <a href="/">Tehtävät ja askartelu</a>
+        <a href="/home" aria-current="page">Lemmikin koti</a>
+      </nav>
+    </header>
+
+    {{ERROR}}
+
+    <section class="home-room" aria-label="Lemmikin huone">
+      <div class="home-window" aria-hidden="true"><span>☀</span></div>
+      <div class="home-pet">{{PET_VISUAL}}</div>
+      <div class="home-room-items">{{PLACED_ITEMS}}</div>
+      <div class="home-floor" aria-hidden="true"></div>
+    </section>
+
+    <section class="home-build-section" aria-labelledby="home-build-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">TEE KODISTA OMA</p>
+          <h2 id="home-build-title">Valmiit sisustusesineet</h2>
+        </div>
+        <span class="bag-icon" aria-hidden="true">🧰</span>
+      </div>
+      <p class="home-build-intro">Askartele esineitä tehtäväsivulla ja lisää niitä tänne. Kotiin sijoitettu esine siirtyy pois repusta.</p>
+      {{AVAILABLE_ITEMS}}
+    </section>
+  </main>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # alota jo -sovellus
 
-Yhden sivun, riippuvuudeton Python-to-do-sovellus pisteiden keräyksellä.
+Riippuvuudeton Python-to-do-sovellus pisteiden keräyksellä ja lemmikin kodilla.
 Projektin tarkoitus on harjoitella vibe koodausta agentin avulla.
 ## 1. Käynnistys Linuxissa
 Tarvitset:
@@ -38,5 +38,7 @@ Jätä terminaali käyntiin ja avaa selaimessa [http://127.0.0.1:8000](http://12
 - Viikkotavoitteena on tehdä vähintään 15 tehtävää. Jaettu tehtävä lasketaan yhdeksi vasta kaikkien osien valmistuttua; viikko vaihtuu ilman katkenneesta putkesta rankaisemista.
 - Päivän yllätystehtävä arvotaan kerran päivässä valmiista tehtävistä. Sen voi lisätä tehtävälistalle kerran päivässä, ja valmistumisesta saa kaksinkertaiset XP- ja resurssipalkinnot.
 - Tehtävän ja jokaisen osatehtävän valmistumisesta saa lisäksi yhden satunnaisen resurssin yllätyspaketista. Paketin avaamisen jälkeen ikkuna sulkeutuu häivytyksellä noin kolmen sekunnin kuluttua.
+- Resursseja voi yhdistää jalostetuksi puuksi, lemmikin sängyksi tai herkuksi. Reseptikirjan tuntemattomat tuotokset näkyvät siluetteina; herkun voi käyttää 20 XP:n saamiseksi.
+- Lemmikin kodissa voi sisustaa huonetta askartelemalla sängyn tai pehmolelun ja siirtämällä ne repusta kotiin tai takaisin.
 - Inventaarion kala- ja rahakuvakkeet sekä yllätyspaketin kuvat ladataan `pictures/`-kansiosta.
 - Sivun alareunan "Aloita alusta" -painike pyytää vahvistuksen ja nollaa tehtävät, palkinnot, kokemuspisteet sekä lemmikin valinnan.
