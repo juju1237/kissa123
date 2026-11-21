@@ -27,7 +27,7 @@ DIFFICULTIES = {
         "rewards": {"puupalikat": 0, "kangas": 0, "kuivaruoka": 1, "kolikko": 1},
     },
     "easy": {
-        "label": "Helppo",
+        "label": "eezy",
         "minutes": 10,
         "duration": "10 min",
         "xp": 10,
@@ -148,7 +148,7 @@ def render_subtasks(task: dict, difficulty: dict) -> str:
           <span>{completed_count} / {len(subtasks)} valmiina</span>
         </div>
         <ul class="subtask-list">{"".join(rows)}</ul>
-        <p class="subtask-reward-note">Jokaisesta osasta +5 XP, 1 kuivaruoka ja 1 kolikko. Kaikkien osien valmistumisesta lisäksi +{difficulty["xp"]} XP:n kokonaisbonus palkintoineen.</p>
+        <p class="subtask-reward-note">Jokaisesta osasta +5 XP, 1 kala ja 1 raha. Kaikkien osien valmistumisesta lisäksi +{difficulty["xp"]} XP:n kokonaisbonus palkintoineen.</p>
       </div>
     """
 
@@ -203,8 +203,8 @@ def render_page(state: dict, error: str = "") -> bytes:
         for key, label in (
             ("puupalikat", "🪵 Puupalikat"),
             ("kangas", "🧵 Kangas"),
-            ("kuivaruoka", "🐟 Kuivaruoka"),
-            ("kolikko", "🪙 Kolikot"),
+            ("kuivaruoka", "🐟 Kala"),
+            ("kolikko", "🪙 Raha"),
         )
     )
     preset_options = "\n".join(

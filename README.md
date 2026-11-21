@@ -15,8 +15,8 @@ Avaa selaimessa [http://127.0.0.1:8000](http://127.0.0.1:8000). Tehtävät, palk
 ## Ominaisuudet
 
 - Valmiin tehtävän valitseminen tai oman tehtävän lisääminen.
-- Viisi vaikeustasoa: super helppo (1–5 min), helppo (10 min), keskivaikea (30 min), vaikea (1 tunti) ja Kill (yli 2 tuntia).
-- Tehtävän valmistumisesta saa tasoon perustuvia puupalikoita, kangasta, kuivaruokaa ja kolikoita.
+- Viisi vaikeustasoa: super helppo (1–5 min), eezy (10 min), keskivaikea (30 min), vaikea (1 tunti) ja Kill (yli 2 tuntia).
+- Tehtävän valmistumisesta saa tasoon perustuvia puupalikoita, kangasta, kalaa ja rahaa.
 - Tehtävä poistuu listalta valmistuessaan. Muru-kissan taso kasvaa kokemuspisteillä; seuraava taso vaatii 100 pistettä.
-- Tehtävän voi jakaa 2–10 osaan kirjoittamalla osat omille riveilleen. Jokaisesta osasta saa 5 XP:tä, kuivaruokaa ja kolikon; kaikkien osien jälkeen saa vaikeustason mukaisen kokonaisbonuksen.
+- Tehtävän voi jakaa 2–10 osaan kirjoittamalla osat omille riveilleen. Jokaisesta osasta saa 5 XP:tä, kalaa ja rahaa; kaikkien osien jälkeen saa vaikeustason mukaisen kokonaisbonuksen.
 - Sivun alareunan "Aloita alusta" -painike pyytää vahvistuksen ja nollaa tehtävät, palkinnot sekä kokemuspisteet.
