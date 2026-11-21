@@ -3,7 +3,9 @@ from __future__ import annotations
 import html
 import json
 import os
+import random
 import uuid
+from datetime import date
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -73,6 +75,7 @@ def new_state() -> dict:
         "tasks": [],
         "inventory": {item: 0 for item in INVENTORY_ITEMS},
         "xp": 0,
+        "daily_surprise": None,
     }
 
 
@@ -100,6 +103,36 @@ def save_state(state: dict) -> None:
     with temporary_file.open("w", encoding="utf-8") as state_file:
         json.dump(state, state_file, ensure_ascii=False, indent=2)
     os.replace(temporary_file, STATE_FILE)
+
+
+def grant_reward(state: dict, reward: dict, multiplier: int = 1) -> None:
+    for item, amount in reward["rewards"].items():
+        state["inventory"][item] += amount * multiplier
+    state["xp"] += reward["xp"] * multiplier
+
+
+def ensure_daily_surprise(state: dict) -> dict:
+    today = date.today().isoformat()
+    surprise = state.get("daily_surprise")
+    valid_preset = (
+        isinstance(surprise, dict)
+        and (surprise.get("name"), surprise.get("difficulty")) in PRESET_TASKS
+    )
+    if (
+        not valid_preset
+        or surprise.get("date") != today
+        or not isinstance(surprise.get("claimed"), bool)
+    ):
+        name, difficulty = random.choice(PRESET_TASKS)
+        surprise = {
+            "date": today,
+            "name": name,
+            "difficulty": difficulty,
+            "claimed": False,
+        }
+        state["daily_surprise"] = surprise
+        save_state(state)
+    return surprise
 
 
 def escape(value: object) -> str:
@@ -148,7 +181,7 @@ def render_subtasks(task: dict, difficulty: dict) -> str:
           <span>{completed_count} / {len(subtasks)} valmiina</span>
         </div>
         <ul class="subtask-list">{"".join(rows)}</ul>
-        <p class="subtask-reward-note">Jokaisesta osasta +5 XP, 1 kala ja 1 raha. Kaikkien osien valmistumisesta lisäksi +{difficulty["xp"]} XP:n kokonaisbonus palkintoineen.</p>
+        <p class="subtask-reward-note">Jokaisesta osasta +5 XP, 1 kala ja 1 raha. Kaikkien osien valmistumisesta lisäksi +{difficulty["xp"] * (2 if task.get("double_reward") else 1)} XP:n kokonaisbonus palkintoineen.</p>
       </div>
     """
 
@@ -156,16 +189,25 @@ def render_subtasks(task: dict, difficulty: dict) -> str:
 def render_task(task: dict) -> str:
     difficulty = DIFFICULTIES[task["difficulty"]]
     subtasks = task.get("subtasks", [])
+    reward_multiplier = 2 if task.get("double_reward") else 1
     if subtasks:
         completed_count = sum(subtask["completed"] for subtask in subtasks)
         task_meta = (
             f'{difficulty["label"]} · {difficulty["duration"]} · '
-            f'{completed_count}/{len(subtasks)} osaa · kokonaisbonus +{difficulty["xp"]} XP'
+            f'{completed_count}/{len(subtasks)} osaa · kokonaisbonus '
+            f'+{difficulty["xp"] * reward_multiplier} XP'
         )
+        if reward_multiplier == 2:
+            task_meta += " (tuplapalkinto)"
         subtask_html = render_subtasks(task, difficulty)
         action_html = ""
     else:
-        task_meta = f'{difficulty["label"]} · {difficulty["duration"]} · +{difficulty["xp"]} tassupistettä'
+        task_meta = (
+            f'{difficulty["label"]} · {difficulty["duration"]} · '
+            f'+{difficulty["xp"] * reward_multiplier} tassupistettä'
+        )
+        if reward_multiplier == 2:
+            task_meta += " · päivän yllätys (tuplapalkinto)"
         subtask_html = ""
         action_html = f"""
           <form method="post" class="complete-form">
@@ -191,6 +233,29 @@ def render_task(task: dict) -> str:
 
 def render_page(state: dict, error: str = "") -> bytes:
     template = TEMPLATE_FILE.read_text(encoding="utf-8")
+    daily_surprise = ensure_daily_surprise(state)
+    surprise_difficulty = DIFFICULTIES[daily_surprise["difficulty"]]
+    if daily_surprise["claimed"]:
+        surprise_action = '<p class="surprise-used">Päivän yllätys on jo käytetty. Uusi ehdotus tulee huomenna!</p>'
+    else:
+        surprise_action = """
+          <form method="post">
+            <input type="hidden" name="action" value="claim_daily_surprise">
+            <button class="button button-surprise" type="submit">Lisää tehtävälistalle</button>
+          </form>
+        """
+    daily_surprise_html = f"""
+      <section class="daily-surprise" aria-labelledby="daily-surprise-title">
+        <div class="surprise-icon" aria-hidden="true">🎁</div>
+        <div class="surprise-content">
+          <p class="eyebrow">PÄIVÄN YLLÄTYS</p>
+          <h2 id="daily-surprise-title">{escape(daily_surprise["name"])}</h2>
+          <p class="surprise-meta">{surprise_difficulty["label"]} · {surprise_difficulty["duration"]}</p>
+          <p class="surprise-reward">Tuplapalkinto: +{surprise_difficulty["xp"] * 2} XP ja kaikki resurssit kaksinkertaisina.</p>
+          {surprise_action}
+        </div>
+      </section>
+    """
     tasks = "\n".join(render_task(task) for task in state["tasks"])
     if not tasks:
         tasks = '<li class="empty-state">Lista on tyhjä. Lisää ensimmäinen tehtäväsi!</li>'
@@ -219,6 +284,7 @@ def render_page(state: dict, error: str = "") -> bytes:
 
     page = (
         template.replace("{{TASKS}}", tasks)
+        .replace("{{DAILY_SURPRISE}}", daily_surprise_html)
         .replace("{{INVENTORY}}", inventory)
         .replace("{{PRESET_OPTIONS}}", preset_options)
         .replace("{{DIFFICULTY_OPTIONS}}", difficulty_options)
@@ -272,7 +338,18 @@ class TodoHandler(BaseHTTPRequestHandler):
                 return
 
             state = load_state()
-            if action == "add_preset":
+            if action == "claim_daily_surprise":
+                surprise = ensure_daily_surprise(state)
+                if surprise["claimed"]:
+                    raise ValueError("Päivän yllätys on jo käytetty.")
+                add_task(
+                    state,
+                    surprise["name"],
+                    surprise["difficulty"],
+                    double_reward=True,
+                )
+                surprise["claimed"] = True
+            elif action == "add_preset":
                 name = form.get("preset", [""])[0]
                 difficulty = next((level for preset, level in PRESET_TASKS if preset == name), None)
                 if difficulty is None:
@@ -296,9 +373,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 if task.get("subtasks"):
                     raise ValueError("Viimeistele kaikki osatehtävät ennen kokonaisbonusta.")
                 reward = DIFFICULTIES[task["difficulty"]]
-                for item, amount in reward["rewards"].items():
-                    state["inventory"][item] += amount
-                state["xp"] += reward["xp"]
+                grant_reward(state, reward, 2 if task.get("double_reward") else 1)
                 state["tasks"].remove(task)
             elif action == "complete_subtask":
                 task_id = form.get("task_id", [""])[0]
@@ -318,9 +393,7 @@ class TodoHandler(BaseHTTPRequestHandler):
                 state["inventory"]["kolikko"] += 1
                 if all(part["completed"] for part in task["subtasks"]):
                     reward = DIFFICULTIES[task["difficulty"]]
-                    for item, amount in reward["rewards"].items():
-                        state["inventory"][item] += amount
-                    state["xp"] += reward["xp"]
+                    grant_reward(state, reward, 2 if task.get("double_reward") else 1)
                     state["tasks"].remove(task)
             else:
                 raise ValueError("Tuntematon toiminto.")
@@ -344,12 +417,14 @@ def add_task(
     name: str,
     difficulty: str,
     subtasks: list[str] | None = None,
+    double_reward: bool = False,
 ) -> None:
     state["tasks"].append(
         {
             "id": uuid.uuid4().hex,
             "name": name,
             "difficulty": difficulty,
+            "double_reward": double_reward,
             "subtasks": [
                 {"id": uuid.uuid4().hex, "name": subtask, "completed": False}
                 for subtask in (subtasks or [])

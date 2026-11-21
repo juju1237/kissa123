@@ -19,4 +19,5 @@ Avaa selaimessa [http://127.0.0.1:8000](http://127.0.0.1:8000). Tehtävät, palk
 - Tehtävän valmistumisesta saa tasoon perustuvia puupalikoita, kangasta, kalaa ja rahaa.
 - Tehtävä poistuu listalta valmistuessaan. Muru-kissan taso kasvaa kokemuspisteillä; seuraava taso vaatii 100 pistettä.
 - Tehtävän voi jakaa 2–10 osaan kirjoittamalla osat omille riveilleen. Jokaisesta osasta saa 5 XP:tä, kalaa ja rahaa; kaikkien osien jälkeen saa vaikeustason mukaisen kokonaisbonuksen.
+- Päivän yllätystehtävä arvotaan kerran päivässä valmiista tehtävistä. Sen voi lisätä tehtävälistalle kerran päivässä, ja valmistumisesta saa kaksinkertaiset XP- ja resurssipalkinnot.
 - Sivun alareunan "Aloita alusta" -painike pyytää vahvistuksen ja nollaa tehtävät, palkinnot sekä kokemuspisteet.
