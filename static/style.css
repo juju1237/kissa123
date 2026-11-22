@@ -1,20 +1,26 @@
 :root {
   color-scheme: light;
-  --ink: #332d35;
-  --muted: #827984;
-  --purple: #7657c8;
-  --purple-dark: #6142b3;
-  --lavender: #f0ebff;
-  --paper: #fffefa;
-  --line: #eee9e2;
-  --green: #e7f4e7;
+  --ink: #29242a;
+  --muted: #74645d;
+  --purple: #e5007d;
+  --purple-dark: #8c1456;
+  --lavender: #f6d5e5;
+  --paper: #f5ead6;
+  --line: #aa9481;
+  --green: #c5cf77;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #f8f5f0;
+  background-color: #29262a;
+  background-image:
+    linear-gradient(rgb(255 245 223 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 245 223 / 4%) 1px, transparent 1px),
+    radial-gradient(circle, rgb(255 245 223 / 8%) 0 1px, transparent 1.5px);
+  background-size: 48px 48px, 48px 48px, 18px 18px;
+  background-attachment: fixed;
   color: var(--ink);
   font-family: Consolas, "Courier New", monospace;
 }
@@ -611,15 +617,6 @@ footer p { margin-bottom: 8px; }
   .page-nav { width: 100%; }
   .page-nav a { flex: 1 1 auto; text-align: center; }
   .pet-setup { margin-top: 24px; }
-  .cat-card { align-items: flex-start; gap: 15px; padding: 18px;       .home-room { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; min-height: 260px; padding: 54px 12px 26px; }
-    .home-window { top: 15px; right: 16px; width: 58px; height: 54px; }
-    .home-room-items { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 7px; }
-    .home-object { padding: 9px 6px; }
-    .home-object-icon { font-size: 2.4rem; }
-    .home-build-section { padding: 18px; }
-    .home-build-item { flex-wrap: wrap; }
-    .home-build-item form { width: 100%; margin-left: 0; }
-    .home-build-item form .button { width: 100%; }
   .cat-card { align-items: flex-start; gap: 15px; padding: 18px; }
   .cat-avatar { max-width: 34vw; border-radius: 20px; }
   .cat-message { margin-bottom: 14px; }
@@ -629,6 +626,15 @@ footer p { margin-bottom: 8px; }
   .inventory-card, .crafting-section, .tasks-section { padding: 18px; }
   .inventory-list { grid-template-columns: repeat(2, 1fr); }
   .add-task-grid { grid-template-columns: 1fr; }
+  .home-room { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; min-height: 260px; padding: 54px 12px 26px; }
+  .home-window { top: 15px; right: 16px; width: 58px; height: 54px; }
+  .home-room-items { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 7px; }
+  .home-object { padding: 9px 6px; }
+  .home-object-icon { font-size: 2.4rem; }
+  .home-build-section { padding: 18px; }
+  .home-build-item { flex-wrap: wrap; }
+  .home-build-item form { width: 100%; margin-left: 0; }
+  .home-build-item form .button { width: 100%; }
 }
 
 @media (max-width: 370px) {
@@ -637,3 +643,239 @@ footer p { margin-bottom: 8px; }
   .form-row { flex-direction: column; }
   .task-main, .subtask-row { align-items: flex-start; }
 }
+
+.pet-setup,
+.cat-card,
+.weekly-goal-card,
+.daily-surprise,
+.reward-package,
+.inventory-card,
+.crafting-section,
+.tasks-section,
+.home-room,
+.home-build-section {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 5px 5px 0 rgb(32 62 70 / 18%);
+}
+
+.pet-setup,
+.inventory-card,
+.crafting-section,
+.tasks-section,
+.home-build-section {
+  background-color: var(--paper);
+}
+
+.pet-choice,
+.page-nav,
+.add-form,
+.task-card,
+.recipe-card,
+.inventory-list li,
+.crafted-list li {
+  border: 2px solid var(--ink);
+  border-radius: 5px;
+  box-shadow: 3px 3px 0 rgb(32 62 70 / 12%);
+}
+
+.pet-choice,
+.page-nav,
+.add-form,
+.task-card,
+.recipe-card {
+  background-color: #fffdf0;
+}
+
+.page-nav a { border-radius: 3px; }
+.page-nav a:hover, .page-nav a[aria-current="page"] { background: var(--lavender); }
+.pet-choice:has(input:checked) { border-color: var(--purple-dark); background: var(--lavender); }
+.page-header h1 { color: #fff4df; text-shadow: 3px 3px 0 var(--purple); }
+.page-header .eyebrow { color: #ff55ad; }
+.page-header .subtitle { color: #d7c6b5; }
+.cat-card { background: linear-gradient(115deg, #f3c6dc, #f5ead6 75%); }
+.cat-avatar { border: 2px solid var(--ink); border-radius: 8px; }
+.level-badge { border: 2px solid var(--ink); border-radius: 4px; background: #d8793c; color: #fff4df; }
+.weekly-goal-card { background: linear-gradient(110deg, #d8dda4, #f5ead6 78%); }
+.weekly-goal-card .eyebrow { color: #596322; }
+.weekly-progress-track { background: #efe2bc; }
+.weekly-progress-track span { background: #737f2c; }
+.daily-surprise { background: linear-gradient(110deg, #d8793c, #f5ead6 78%); }
+.daily-surprise .eyebrow { color: #8c3d25; }
+.surprise-image { border: 2px solid var(--ink); border-radius: 5px; background: #e49a55; }
+.reward-package { background: linear-gradient(110deg, #d8793c, #f5ead6); }
+.inventory-list li, .crafted-list li { background: #e4e0c3; }
+.crafted-list li:nth-child(even) { background: #f2d9e3; }
+.recipe-card.locked .recipe-icon { filter: grayscale(1) brightness(0) opacity(.35); }
+.home-room { border-radius: 8px; box-shadow: 5px 5px 0 rgb(32 62 70 / 18%); }
+.home-room { background: linear-gradient(180deg, #d8793c 0 76%, #873e3b 76% 100%); }
+.home-window { border: 4px solid var(--ink); border-radius: 4px; background: linear-gradient(135deg, #f6d5e5, #e4e0c3); box-shadow: 3px 3px 0 rgb(32 62 70 / 20%); }
+.home-object { border: 2px solid var(--ink); border-radius: 5px; box-shadow: 3px 3px 0 rgb(32 62 70 / 15%); }
+.home-build-item { border: 2px solid var(--ink); border-radius: 5px; background: #e4e0c3; }
+
+input, select, textarea {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff8e9;
+}
+
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline-color: var(--purple);
+}
+
+.progress-track {
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  background: #e4e0c3;
+}
+
+.progress-track span { border-radius: 0; }
+.button {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.button-primary { background: var(--purple); color: #fff8e9; }
+.button-primary:hover:not(:disabled) { background: #b90064; }
+.button-secondary, .button-craft { background: var(--lavender); color: var(--ink); }
+.button-secondary:hover:not(:disabled), .button-craft:hover:not(:disabled) { background: #edb7d1; }
+.button-complete, .button-subtask { background: var(--green); color: #3d4718; }
+.button-surprise { border-color: var(--ink); background: #d8793c; color: #fff8e9; }
+.button-reset { border-color: var(--ink); background: #b94a48; color: #fff8e9; }
+.button-surprise:hover:not(:disabled) { background: #bb5c2e; }
+.button-reset:hover:not(:disabled) { background: #963838; }
+.button { box-shadow: 3px 3px 0 #161316; }
+.button:hover:not(:disabled) { box-shadow: 4px 4px 0 #161316; }
+.button:active:not(:disabled) { box-shadow: 1px 1px 0 #161316; }
+footer { color: #d7c6b5; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+body {
+  background-color: #873e3b;
+  background-image:
+    linear-gradient(rgb(255 245 223 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 245 223 / 5%) 1px, transparent 1px),
+    radial-gradient(circle, rgb(255 245 223 / 9%) 0 1px, transparent 1.5px);
+}
+
+.pet-setup,
+.inventory-card,
+.crafting-section,
+.tasks-section,
+.home-build-section {
+  background: #392f33;
+  color: #fff4df;
+}
+
+.pet-setup-intro,
+.home-build-intro,
+.home-build-empty,
+.recipe-book-hint,
+.task-meta,
+.progress-label {
+  color: #dfd0c0;
+}
+
+.pet-choice,
+.page-nav,
+.add-form,
+.task-card,
+.recipe-card,
+.inventory-list li,
+.crafted-list li,
+.home-build-item {
+  background: #4b3b40;
+  color: #fff4df;
+}
+
+.page-nav a { color: #dfd0c0; }
+.page-nav a:hover, .page-nav a[aria-current="page"] { color: var(--ink); }
+.pet-choice strong,
+.add-form label,
+.task-info strong,
+.crafting-section h3,
+.recipe-output h4,
+.home-build-item strong {
+  color: #fff4df;
+}
+
+.pet-choice:has(input:checked) { background: #653747; }
+.home-build-item strong { color: #dfd0c0; }
+.ingredient-list li,
+.recipe-book-hint,
+.subtasks-heading span,
+.subtask-reward-note,
+.empty-state {
+  color: #dfd0c0;
+}
+
+.ingredient-list strong { color: #fff4df; }
+.inventory-list strong, .crafted-list strong { color: #ff55ad; }
+.recipe-card.locked .recipe-output h4 { color: #dfd0c0; }
+.recipe-card.locked .recipe-icon { filter: brightness(0) invert(1) opacity(.35); }
+.recipe-note { color: #c5cf77; }
+.subtasks-panel { border-color: #806b70; }
+.subtask-row { background: #55454a; }
+.subtask-row-done { background: #4f5734; }
+.weekly-goal-card {
+  background: linear-gradient(110deg, #55572f, #39372f 78%);
+  color: #fff4df;
+}
+
+.weekly-goal-card .eyebrow { color: #c5cf77; }
+.weekly-goal-description,
+.weekly-goal-message { color: #dfd0c0; }
+.weekly-progress-track { background: #726d43; }
+.daily-surprise {
+  background: linear-gradient(110deg, #713b28, #493139 78%);
+  color: #fff4df;
+}
+
+.daily-surprise .eyebrow { color: #f0a36d; }
+.surprise-meta { color: #dfd0c0; }
+.surprise-reward { color: #ffd5aa; }
+.surprise-used { color: #ffd5aa; }
+.reward-package { background: linear-gradient(110deg, #713b28, #493139); }
+.package-reveal p { color: #dfd0c0; }
+.package-reveal strong { color: #ffd5aa; }
+.home-room { background: linear-gradient(180deg, #814e35 0 76%, #5f302f 76% 100%); }
+.home-empty {
+  border-color: #e2bd9e;
+  background: rgb(57 47 51 / 92%);
+  color: #fff4df;
+}
+
+input, select, textarea {
+  border-color: #aa9481;
+  background: #30292c;
+  color: #fff4df;
+}
+
+input::placeholder, textarea::placeholder { color: #c2b1a3; }
+.progress-track { background: #6a565a; }
+.cat-card .progress-label { color: var(--muted); }
+.cat-card .progress-track { background: #e4e0c3; }
+.button-secondary, .button-craft { background: #653747; color: #fff4df; }
+.button-secondary:hover:not(:disabled), .button-craft:hover:not(:disabled) { background: #814456; }
+.button-complete, .button-subtask { background: #737f2c; color: #fff8df; }

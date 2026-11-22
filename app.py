@@ -17,6 +17,7 @@ TEMPLATE_FILE = ROOT / "templates" / "index.html"
 HOME_TEMPLATE_FILE = ROOT / "templates" / "home.html"
 INVENTORY_ITEMS = ("puupalikat", "kangas", "kuivaruoka", "kolikko")
 WEEKLY_TASK_GOAL = 15
+WEEKLY_GOAL_REWARD = 15
 STATIC_FILES = {
     "/static/style.css": (ROOT / "static" / "style.css", "text/css; charset=utf-8"),
     "/pictures/kissatodo.png": (ROOT / "pictures" / "kissatodo.png", "image/png"),
@@ -31,7 +32,7 @@ STATIC_FILES = {
 
 DIFFICULTIES = {
     "super_easy": {
-        "label": "Super helppo",
+        "label": "Super eezy",
         "minutes": 5,
         "duration": "1–5 min",
         "xp": 5,
@@ -108,7 +109,19 @@ RECIPES = {
         "name": "Pehmolelu",
         "icon": "🧸",
         "output": "pehmolelu",
-        "ingredients": {"kangas": 2, "kuivaruoka": 1},
+        "ingredients": {"kangas": 3},
+    },
+    "small_plant": {
+        "name": "Pieni kasvi",
+        "icon": "🌱",
+        "output": "pieni_kasvi",
+        "ingredients": {"puupalikat": 2},
+    },
+    "big_plant": {
+        "name": "Iso kasvi",
+        "icon": "🪴",
+        "output": "iso_kasvi",
+        "ingredients": {"puupalikat": 4},
     },
     "treat": {
         "name": "Herkku",
@@ -121,11 +134,15 @@ CRAFTED_ITEMS = {
     "jalostettu_puu": "Jalostettu puu",
     "lemmikin_sanky": "Lemmikin sänky",
     "pehmolelu": "Pehmolelu",
+    "pieni_kasvi": "Pieni kasvi",
+    "iso_kasvi": "Iso kasvi",
     "herkku": "Herkku",
 }
 HOME_ITEMS = {
     "lemmikin_sanky": {"name": "Lemmikin sänky", "icon": "🛏️"},
     "pehmolelu": {"name": "Pehmolelu", "icon": "🧸"},
+    "pieni_kasvi": {"name": "Pieni kasvi", "icon": "🌱"},
+    "iso_kasvi": {"name": "Iso kasvi", "icon": "🪴"},
 }
 RESOURCE_LABELS = {
     "puupalikat": "Puupalikka",
@@ -220,15 +237,31 @@ def ensure_weekly_goal(state: dict) -> dict:
         or type(weekly_goal.get("completed")) is not int
         or weekly_goal["completed"] < 0
     ):
-        weekly_goal = {"week": current_week, "completed": 0}
+        weekly_goal = {
+            "week": current_week,
+            "completed": 0,
+            "reward_claimed": False,
+        }
         state["weekly_goal"] = weekly_goal
         save_state(state)
+    elif "reward_claimed" not in weekly_goal:
+        already_complete = weekly_goal["completed"] >= WEEKLY_TASK_GOAL
+        weekly_goal["reward_claimed"] = already_complete
+        if already_complete:
+            state["inventory"]["kolikko"] += WEEKLY_GOAL_REWARD
+            save_state(state)
     return weekly_goal
 
 
 def register_completed_task(state: dict) -> None:
     weekly_goal = ensure_weekly_goal(state)
     weekly_goal["completed"] += 1
+    if (
+        weekly_goal["completed"] >= WEEKLY_TASK_GOAL
+        and not weekly_goal["reward_claimed"]
+    ):
+        state["inventory"]["kolikko"] += WEEKLY_GOAL_REWARD
+        weekly_goal["reward_claimed"] = True
 
 
 def ensure_daily_surprise(state: dict) -> dict:
@@ -546,7 +579,7 @@ def render_home_page(state: dict, error: str = "") -> bytes:
     if not placed_items:
         placed_items = """
           <p class="home-empty">Koti odottaa vielä ensimmäisiä tavaroitaan.
-          Askartele lemmikille sänky tai pehmolelu, niin voit tuoda sen tänne.</p>
+          Askartele lemmikille sänky, pehmolelu tai kasvi, niin voit tuoda sen tänne.</p>
         """
 
     available_items = []
@@ -569,7 +602,7 @@ def render_home_page(state: dict, error: str = "") -> bytes:
     if not available_items:
         available_items_html = (
             '<p class="home-build-empty">Askarteluvarastossasi ei ole vielä '
-            'sisustusesineitä. Valmista sänky tai pehmolelu tehtäväsivulla.</p>'
+            'sisustusesineitä. Valmista sänky, pehmolelu tai kasvi tehtäväsivulla.</p>'
         )
     else:
         available_items_html = f'<ul class="home-build-list">{"".join(available_items)}</ul>'
@@ -604,18 +637,22 @@ def render_page(
             100,
         )
         if completed_this_week >= WEEKLY_TASK_GOAL:
-            weekly_message = "Tavoite saavutettu — hienoa! Voit jatkaa tai levätä, kuten sinulle sopii."
+            weekly_message = (
+                f"Tavoite saavutettu — hienoa! "
+                f"{WEEKLY_GOAL_REWARD} rahaa on lisätty reppuusi. "
+                "Voit jatkaa tai levätä, kuten sinulle sopii."
+            )
         else:
             weekly_message = "Yksi tehtävä kerrallaan riittää. Vapaapäivä ei nollaa edistymistä."
         weekly_goal_html = f"""
           <section class="weekly-goal-card" aria-labelledby="weekly-goal-title">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">ARMOLLINEN VIIKKOTAVOITE</p>
+                <p class="eyebrow">VIIKKOTAVOITE</p>
                 <h2 id="weekly-goal-title">Viikon tavoite</h2>
               </div>
             </div>
-            <p class="weekly-goal-description">Tee vähintään {WEEKLY_TASK_GOAL} tehtävää viikon aikana.</p>
+            <p class="weekly-goal-description">Tee vähintään {WEEKLY_TASK_GOAL} tehtävää viikon aikana. Palkinto: {WEEKLY_GOAL_REWARD} rahaa.</p>
             <div class="progress-label">
               <span>Valmiit tehtävät tällä viikolla</span>
               <span>{completed_this_week} / {WEEKLY_TASK_GOAL}</span>
